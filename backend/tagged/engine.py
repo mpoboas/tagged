@@ -1,3 +1,4 @@
+import os
 from functools import lru_cache
 from pathlib import Path
 
@@ -11,7 +12,12 @@ IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp"}
 def _app():
     from insightface.app import FaceAnalysis
 
-    app = FaceAnalysis(name="buffalo_l", providers=["CoreMLExecutionProvider", "CPUExecutionProvider"])
+    import onnxruntime as ort
+
+    have = ort.get_available_providers()
+    providers = [p for p in ("CoreMLExecutionProvider", "CUDAExecutionProvider", "CPUExecutionProvider") if p in have]
+    # INSIGHTFACE_HOME lets a container keep the (non-commercial licence) models in a volume instead of in the image.
+    app = FaceAnalysis(name="buffalo_l", root=os.environ.get("INSIGHTFACE_HOME", "~/.insightface"), providers=providers)
     app.prepare(ctx_id=0, det_size=(960, 960))
     return app
 

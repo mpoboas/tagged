@@ -82,6 +82,29 @@
 
   // Same thing a person does: open the photo in the viewer (no page load; the viewer's own request brings the 2048px
   // version), read the big <img>, go back. Typically 0.2-0.5 s per photo.
+  // Resolve as soon as cond() is truthy, driven by DOM mutations, <img> load events and popstate instead of timers:
+  // Chrome stretches every timer in a hidden tab to ~1 s, events are not delayed. The timer is only a safety net.
+  function waitUntil(cond, ms) {
+    return new Promise((resolve) => {
+      let done = false, t;
+      const finish = (v) => {
+        if (done) return;
+        done = true; mo.disconnect(); clearTimeout(t);
+        document.removeEventListener("load", chk, true); window.removeEventListener("popstate", chk);
+        resolve(v);
+      };
+      const chk = () => { const v = cond(); if (v) finish(v); };
+      const mo = new MutationObserver(chk);
+      mo.observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ["src"] });
+      document.addEventListener("load", chk, true);   // image load events do not bubble: listen in the capture phase
+      window.addEventListener("popstate", chk);
+      t = setTimeout(() => finish(cond() || null), ms);
+      chk();
+    });
+  }
+
+  // Same thing a person does: open the photo in the viewer (no page load; the viewer's own request brings the 2048px
+  // version), read the big <img>, go back.
   async function viewerFull(it) {
     const T = { find: 0, view: 0, back: 0 };
     let t = performance.now();
@@ -93,22 +116,20 @@
     const b = base(it.url);
     t = performance.now();
     a.click();
-    let best = null;
-    for (let i = 0; i < 40; i++) {
-      await sleep(150);
+    const best = await waitUntil(() => {
+      let r = null;
       for (const im of document.images) {
         if (!/fbcdn|scontent/.test(im.src) || !im.complete || base(im.src) !== b) continue;
-        if (!best || im.naturalWidth > best.w) best = { w: im.naturalWidth, h: im.naturalHeight, url: im.src };
+        if (!r || im.naturalWidth > r.w) r = { w: im.naturalWidth, h: im.naturalHeight, url: im.src };
       }
-      if (best && best.w >= 1200) break;
-    }
+      return r && r.w >= 1200 ? r : null;
+    }, 8000);
     lap("view");
     history.back();
-    for (let i = 0; i < 30 && /^\/photo/.test(location.pathname); i++) await sleep(100);
-    const p = jitter(250, 600);
-    await sleep(p);
+    await waitUntil(() => !/^\/photo/.test(location.pathname), 3000);
+    await waitUntil(() => document.querySelector('a[href*="/photo"] img'), 3000);   // album grid is back
     lap("back");
-    return best && best.w >= 1200 ? { ...best, ms: T } : null;
+    return best ? { ...best, ms: T } : null;
   }
 
   async function full(keys) {

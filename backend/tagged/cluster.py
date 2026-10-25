@@ -57,6 +57,14 @@ def _load():
     return rows, names
 
 
+def pack_people(refs: Path = Path("data/refs"), out: Path = Path("data/people.npz")) -> str:
+    """One .npz with an array per person (key = name), the file the webapp's Definições page takes."""
+    arrays = {d.name: np.load(d / "embeddings.npy") for d in sorted(refs.iterdir()) if (d / "embeddings.npy").exists()}
+    out.parent.mkdir(parents=True, exist_ok=True)
+    np.savez(out, **arrays)
+    return f"{out}: {len(arrays)} people, {sum(len(a) for a in arrays.values())} reference faces"
+
+
 def export():
     rows, names = _load()
     E = np.load(WORK / "embeddings.npy")
@@ -88,6 +96,8 @@ def export():
         for photo in sorted({rows[fi]["photo"] for fi in rest} - ref_photos):
             shutil.copy2(photo, td / Path(photo).name)
         named_photos |= {rows[fi]["photo"] for fi in idx}
+    if by_name:
+        pack_people()
     nd = Path("data/test/_none")
     nd.mkdir(parents=True, exist_ok=True)
     for photo in sorted({r["photo"] for r in rows} - named_photos):

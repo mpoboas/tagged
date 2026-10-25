@@ -1,0 +1,12 @@
+services:
+  tagged:
+    image: ghcr.io/mpoboas/tagged:latest
+    # build: .                      # uncomment to build locally instead of pulling
+    ports:
+      - "8768:8768"
+    environment:
+      # Set a password whenever this is reachable from outside your machine (user: tagged).
+      TAGGED_PASSWORD: ${TAGGED_PASSWORD:-}
+    volumes:
+      - ./data:/data                # only the downloaded models (data/models)
+    restart: unless-stopped
