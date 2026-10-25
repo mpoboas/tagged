@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "tagged",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "description": "Ponte entre um \u00e1lbum do Facebook aberto e a webapp tagged (local).",
   "icons": {
     "16": "icons/icon-16.png",

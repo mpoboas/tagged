@@ -24,25 +24,30 @@ Abre `http://<servidor>:8768` (utilizador `tagged`). A página abre logo. Na pri
 
 ## Instalar a extensão
 
-Na webapp, separador **Extensão**: descarrega o zip, descomprime, abre `chrome://extensions`, liga o Modo de programador e carrega a pasta com *Carregar sem compactar*. Recarrega a webapp: o selo no topo passa a "extensão ligada". Quando houver uma versão nova, o selo avisa.
+A webapp guia-te nisto no primeiro uso (passo **Ligar ao Facebook**) e também em **Ajuda → Ligação ao Facebook**: descarregas o zip, descomprimes, abres `chrome://extensions` (há um botão para copiar o endereço), ligas o Modo de programador e carregas a pasta com *Carregar sem compactar*. A página deteta a extensão sozinha e o indicador no canto superior direito passa a "Facebook ligado". Quando houver uma versão nova, o indicador avisa.
 
 ## Usar
 
-1. Abre o álbum no Facebook noutro separador e carrega em **Obter fotos do Facebook**. A extensão traz o separador do Facebook para a frente, percorre o álbum sozinha (ao ritmo de uma pessoa) e volta à webapp no fim. **Parar** interrompe.
-2. Revê as fotos em **certeza** / **rever** / **sem match**. Atalhos (tecla `?`): setas para mudar de foto, `Enter` para ampliar, `espaço` para incluir ou tirar, `P` / `X` para incluir ou deixar de fora e passar à seguinte.
-3. Quando uma cara não é reconhecida, amplia a foto, clica na cara e diz quem é: passa a ser uma referência dessa pessoa e as fotos são reavaliadas. O separador **caras por nomear** junta as caras repetidas que ninguém reconheceu, para dares nome a uma pessoa nova de uma vez.
-4. **Descarregar zip** (ou **Enviar para o Google Photos**) vai buscar os originais ao álbum aberto no Facebook.
+1. Abre o álbum no Facebook noutro separador e carrega em **Importar álbum do Facebook** (no ecrã **Álbuns**). A extensão traz o separador do Facebook para a frente, percorre o álbum sozinha (ao ritmo de uma pessoa) e volta à webapp no fim. **Parar** interrompe.
+2. Revê as fotos em **Reconhecidas** (já vêm marcadas para descarregar), **Para confirmar** ("talvez Ana": decides tu) e **Outras**. Se o Tagged marca fotos de mais ou de menos, **Ajustar o reconhecimento** (no fim da página) muda o rigor. Atalhos (tecla `?`): setas para mudar de foto, `Enter` para ampliar, `espaço` para marcar ou desmarcar, `P` / `X` para marcar ou deixar de fora e passar à seguinte.
+3. Quando uma cara não é reconhecida, amplia a foto, clica na cara e diz quem é: passa a ser um exemplo dessa pessoa e os álbuns são atualizados. O separador **Caras novas** junta as caras repetidas que ninguém reconheceu, para dares nome a uma pessoa nova de uma vez.
+4. **Descarregar N fotos** (ou **Enviar para o Google Fotos**), na barra fixa em baixo, vai buscar as fotos em boa qualidade ao álbum aberto no Facebook e junta-as num `.zip`.
+5. Em **Procurar** escolhes uma pessoa e vês as fotos dela em todos os álbuns importados. Em **Pessoas** geres quem é reconhecido.
 
 ## As pessoas a reconhecer
 
-As pessoas ficam **no teu browser**, não no servidor: carregas uma vez, em **Definições → Carregar pessoas**, e não precisas de repetir (ficam no IndexedDB desse browser; noutro browser ou computador carregas outra vez, ou usas **exportar people.npz**, que inclui as caras que nomeaste na webapp). O servidor só devolve as caras e os vetores de cada foto, e é o browser que os compara. Por isso, se mudares as pessoas, as sessões antigas atualizam-se sozinhas.
+As pessoas ficam **no teu browser**, não no servidor: configuras uma vez e não precisas de repetir (ficam guardadas no IndexedDB desse browser; noutro browser ou computador carregas outra vez). O servidor só devolve as caras e os vetores de cada foto, e é o browser que os compara. Por isso, se mudares as pessoas, as sessões antigas atualizam-se sozinhas.
 
-Aceita:
+**Na primeira vez** a webapp abre um assistente com três passos (**Os teus amigos**, **Ligar ao Facebook**, **Primeiro álbum**), e, até estarem feitos, mostra uma lista de "Primeiros passos" no ecrã Álbuns. Podes voltar ao primeiro passo em *Pessoas → Adicionar pessoas*. Aí escolhes:
+1. **"Já tenho um ficheiro de pessoas"**: carregas o `people.npz`.
+2. **"Criar a partir de fotos"**: escolhes uma pasta com fotos onde apareçam as pessoas (até 400; se houver mais, usa uma amostra espaçada). O Tagged encontra as caras, agrupa as parecidas e tu dizes quem é cada grupo (o mesmo nome em vários grupos junta-os). No fim ficam guardadas no browser e podes exportar o `people.npz` para usar noutro lado. As fotos não são guardadas: só vão ao servidor para encontrar as caras.
+
+Os formatos que o carregamento aceita:
 - `people.npz`: um ficheiro com todas as pessoas (o mais simples);
 - um `.zip` da pasta `data/refs`, ou a própria pasta (botão "Escolher pasta refs");
 - vários `.npy`, um por pessoa, com o nome da pessoa no nome do ficheiro.
 
-Para gerar o `people.npz` no teu computador:
+Em alternativa, para gerar o `people.npz` pela linha de comandos:
 
 ```bash
 cd backend

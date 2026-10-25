@@ -4,9 +4,9 @@ Sort event photos from Facebook albums: recognise a known set of people, choose 
 
 ## Parts
 1. **backend/** — one stdlib HTTP server (`tagged serve`). It serves the webapp and the extension zip, and `POST /api/score` runs InsightFace (SCRFD detection + ArcFace embeddings; onnxruntime uses CoreML on a Mac, CPU elsewhere) and returns each usable face's box and 512-d embedding. It knows nobody and stores nothing. Optional password: `TAGGED_PASSWORD`.
-2. **backend/tagged/web/** — the webapp. Sessions (one per collection) and the people to recognise live in the browser (IndexedDB); matching runs there. Review, per-photo selection, then a zip named `<session>_0001.jpg…` with the upload date written as EXIF, or an upload to Google Photos.
+2. **backend/tagged/web/** — the webapp. Albums (one per import) and the people to recognise live in the browser (IndexedDB); matching runs there. A three-step first-run wizard (people, Facebook connection, first album) loads a people file or builds the people from a folder of photos (faces grouped by similarity, the user names each group, exportable as `people.npz`). Review, per-photo selection, search for one person across every saved session, then a zip named `<session>_0001.jpg…` with the upload date written as EXIF, or an upload to Google Photos.
 3. **extension/** — Chrome MV3 bridge between an open Facebook album and the webapp (`postMessage`, only on pages carrying the app's marker). It scrolls the album, collects thumbnails, opens each selected photo in the viewer to read the 2048 px original, and takes the upload date from the CDN's `Last-Modified`. Facebook's API is not used (it needs App Review).
-4. **CLI** — `cluster`, `label`, `export`, `people-pack` build the people file from photos; `eval` and `match` calibrate the thresholds.
+4. **CLI** — `cluster`, `label`, `export`, `people-pack` are the command-line way to build the people file (the webapp wizard does the same); `eval` and `match` calibrate the thresholds.
 
 ## Triage
 Cosine similarity of ArcFace embeddings against each person's reference embeddings (max over refs).

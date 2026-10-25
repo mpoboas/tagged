@@ -26,7 +26,7 @@
         const a = img.closest("a[href]");
         items.set(key, { key, url: img.src, href: a ? a.href : null });
       }
-      if (emit && !sent.has(key)) { sent.add(key); out({ t: "thumb", key, url: items.get(key).url }); fresh++; }
+      if (emit && !sent.has(key)) { sent.add(key); out({ t: "thumb", key, url: items.get(key).url, href: items.get(key).href }); fresh++; }
     }
     return fresh;
   }
@@ -159,9 +159,33 @@
     return best ? { ...best, ms: T } : null;
   }
 
+  // After a page load only the first screen of the album is in the DOM, so most wanted photos are not in `items` yet:
+  // scroll down (the grid is virtualised) indexing as we go, until every wanted key has been seen or the bottom is reached.
+  async function indexUntil(keys) {
+    index(false);
+    const missing = () => keys.filter((k) => !items.has(k));
+    if (!missing().length) return;
+    window.scrollTo({ top: 0 });
+    await sleep(500);
+    let idle = 0;
+    for (let step = 0; step < 3000 && !stopFlag && missing().length; step++) {
+      say(`a procurar as fotos no álbum (faltam ${missing().length})`);
+      index(false);
+      if (!missing().length) break;
+      const before = items.size, h = document.documentElement.scrollHeight;
+      const bottom = innerHeight + scrollY >= h - 4;
+      idle = bottom && items.size === before ? idle + 1 : 0;
+      if (idle >= 4) break;
+      if (!bottom) window.scrollBy({ top: innerHeight * 0.8 });
+      await waitUntil(() => document.documentElement.scrollHeight > h || [...document.images].some((im) =>
+        /fbcdn|scontent/.test(im.src) && im.naturalWidth >= 150 && !items.has(keyOf(im.src))), bottom ? 2500 : 1500);
+      await sleep(jitter(200, 450));
+    }
+  }
+
   async function full(keys) {
     stopFlag = false;
-    index(false);   // rebuild the key -> link map from the page, so this also works after a reload or for an older session
+    await indexUntil(keys);   // rebuild the key -> link map from the page, so this also works after a reload or for an older session
     let processed = 0;
     for (const [i, key] of keys.entries()) {
       if (stopFlag) break;
