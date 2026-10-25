@@ -45,14 +45,15 @@ def extension_dir() -> Path:
     return Path(env) if env else Path(__file__).resolve().parents[2] / "extension"
 
 
-def extension_zip(origin_pattern: str | None) -> bytes:
-    """The extension as a zip, with this server's address added to the pages where the bridge runs."""
+def extension_zip(host: str | None) -> bytes:
+    """The extension as a zip, with this server's address added to the pages where the bridge runs (both http and https:
+    the scheme a proxy or tunnel reports is not reliable, and listing both is harmless)."""
     root = extension_dir()
     manifest = json.loads((root / "manifest.json").read_text())
-    if origin_pattern:
+    if host:
         for cs in manifest["content_scripts"]:
-            if "bridge.js" in cs["js"] and origin_pattern not in cs["matches"]:
-                cs["matches"].append(origin_pattern)
+            if "bridge.js" in cs["js"]:
+                cs["matches"] += [m for m in (f"https://{host}/*", f"http://{host}/*") if m not in cs["matches"]]
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         for f in sorted(root.rglob("*")):
@@ -95,10 +96,9 @@ def serve(port: int, host: str = "127.0.0.1"):
                     return False
             return True
 
-        def _origin_pattern(self):
-            proto = self.headers.get("X-Forwarded-Proto") or "http"
-            h = (self.headers.get("Host") or "").split(":")[0]
-            return f"{proto}://{h}/*" if h and h not in ("127.0.0.1", "localhost") else None
+        def _public_host(self):
+            h = (self.headers.get("X-Forwarded-Host") or self.headers.get("Host") or "").split(",")[0].split(":")[0].strip()
+            return h if h and h not in ("127.0.0.1", "localhost") else None
 
         def do_GET(self):
             if not self._guard():
@@ -109,7 +109,7 @@ def serve(port: int, host: str = "127.0.0.1"):
             elif path == "/api/ping":
                 self._send(json.dumps({"ok": True}))
             elif path == "/extension.zip":
-                b = extension_zip(self._origin_pattern())
+                b = extension_zip(self._public_host())
                 self.send_response(200)
                 self.send_header("Content-Type", "application/zip")
                 self.send_header("Content-Disposition", 'attachment; filename="tagged-extension.zip"')
