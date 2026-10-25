@@ -42,7 +42,7 @@ def build(photos: Path, distance: float):
             print(f"{i + 1}/{len(files)} photos, {len(rows)} faces", flush=True)
     E = np.stack(embs).astype(np.float32)
     labels = fcluster(linkage(E, "average", metric="cosine"), distance, "distance")
-    for r, l in zip(rows, labels):
+    for r, l in zip(rows, labels, strict=True):
         r["cluster"] = int(l)
     np.save(WORK / "embeddings.npy", E)
     (WORK / "faces.json").write_text(json.dumps(rows))
@@ -116,12 +116,13 @@ button{padding:8px 14px;margin-right:8px}#bar{position:sticky;top:0;background:#
 <script>
 let names={},cl=[];
 const q=async(u,o)=>(await fetch(u,o)).json();
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 async function load(){const d=await q('/api/clusters');names=d.names;cl=d.clusters;draw()}
-function dl(){document.getElementById('dl').innerHTML=[...new Set(Object.values(names).filter(x=>x))].map(n=>`<option value="${n}">`).join('')}
+function dl(){document.getElementById('dl').innerHTML=[...new Set(Object.values(names).filter(x=>x))].map(n=>`<option value="${esc(n)}">`).join('')}
 function draw(){const hide=document.getElementById('hide').checked;dl();
  document.getElementById('app').innerHTML=cl.filter(c=>!(hide&&names[c.id])).map(c=>`<div class="c ${names[c.id]?'named':''}">
  ${c.sample.map(i=>`<img src="/crop/${i}.jpg">`).join('')}<div>${c.size} faces · ${c.photos} photos</div>
- <input list=dl placeholder="name (blank = skip)" value="${names[c.id]||''}" onchange="setName(${c.id},this)"></div>`).join('')}
+ <input list=dl placeholder="name (blank = skip)" value="${esc(names[c.id]||'')}" onchange="setName(${c.id},this)"></div>`).join('')}
 async function setName(id,el){names[id]=el.value.trim();el.closest('.c').classList.toggle('named',!!names[id]);dl();
  await q('/api/names',{method:'POST',body:JSON.stringify(names)})}
 async function exp(){document.getElementById('msg').textContent=' exporting…';

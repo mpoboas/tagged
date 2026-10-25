@@ -7,6 +7,11 @@ services:
     environment:
       # Set a password whenever this is reachable from outside your machine (user: tagged).
       TAGGED_PASSWORD: ${TAGGED_PASSWORD:-}
+      # Without a password, only IP addresses and localhost are accepted as the Host (DNS-rebinding guard);
+      # list here any hostname you open it by, e.g. "nas.local,tagged.example.com".
+      TAGGED_ALLOWED_HOSTS: ${TAGGED_ALLOWED_HOSTS:-}
+      # Optional: OAuth client ID (type "Web application") to send photos straight to Google Photos.
+      TAGGED_GOOGLE_CLIENT_ID: ${TAGGED_GOOGLE_CLIENT_ID:-}
     volumes:
       - ./data:/data                # only the downloaded models (data/models)
     restart: unless-stopped

@@ -9,7 +9,7 @@
 
   const items = new Map();   // key -> {key, url, href}
   const sent = new Set();
-  let stopFlag = false;
+  let stopFlag = false, collecting = false;
 
   const pill = document.createElement("div");
   pill.style.cssText = "position:fixed;bottom:12px;left:12px;z-index:2147483647;background:#111827;color:#e5e7eb;font:12px system-ui;padding:6px 10px;border-radius:999px;display:none";
@@ -51,14 +51,41 @@
     return m ? parseInt(m[1].replace(/\D/g, ""), 10) : null;
   }
 
-  // Collects only what is already loaded on the page: the user scrolls the album first.
+  // Scroll the album from the top, a screen at a time, indexing thumbnails as they appear: the grid is virtualised, so
+  // photos far from the viewport leave the DOM and a single scan at the end would miss most of a long album.
+  // Stops when the album's own count is reached, or nothing new appears for a while at the bottom.
   async function collect(reset) {
+    if (collecting) return;
+    collecting = true; stopFlag = false;
     if (reset) sent.clear();
-    const title = albumTitle(), expected = albumTotal();
-    out({ t: "meta", title, expected, v: chrome.runtime.getManifest().version });
-    scan();
-    say("a ler a data do álbum…");
-    out({ t: "collect-done", count: sent.size, expected, title });
+    const title = albumTitle(), expected = albumTotal(), url = location.href;
+    out({ t: "meta", title, expected, url, v: chrome.runtime.getManifest().version });
+    try {
+      window.scrollTo({ top: 0 });
+      await sleep(600);
+      let idle = 0;
+      for (let step = 0; step < 3000 && !stopFlag; step++) {
+        const before = sent.size;
+        scan();
+        say(`a percorrer o álbum: ${sent.size}${expected ? " de " + expected : ""} fotos`);
+        out({ t: "collect-progress", count: sent.size, expected });
+        if (expected && sent.size >= expected) break;
+        const bottom = innerHeight + scrollY >= document.documentElement.scrollHeight - 4;
+        idle = bottom && sent.size === before ? idle + 1 : 0;
+        if (idle >= 5) break;
+        const h = document.documentElement.scrollHeight;
+        if (!bottom) window.scrollBy({ top: innerHeight * 0.8 });
+        // wait for Facebook to add or load thumbnails (or grow the page), then a human-ish pause
+        await waitUntil(() => document.documentElement.scrollHeight > h || [...document.images].some((im) =>
+          /fbcdn|scontent/.test(im.src) && im.naturalWidth >= 150 && !sent.has(keyOf(im.src))), bottom ? 2500 : 1500);
+        await sleep(jitter(250, 600));
+      }
+      scan();
+    } finally {
+      collecting = false;
+      say("");
+      out({ t: "collect-done", count: sent.size, expected, title: albumTitle(), url, stopped: stopFlag });
+    }
   }
 
   // The album is a long virtualised list: photos far from the viewport are not in the DOM. Scroll towards the target
@@ -135,8 +162,10 @@
   async function full(keys) {
     stopFlag = false;
     index(false);   // rebuild the key -> link map from the page, so this also works after a reload or for an older session
+    let processed = 0;
     for (const [i, key] of keys.entries()) {
       if (stopFlag) break;
+      processed++;
       say(`a obter originais ${i + 1}/${keys.length}`);
       const it = items.get(key);
       const t0 = performance.now();
@@ -147,7 +176,7 @@
       await sleep(gap);
     }
     say("");
-    out({ t: "full-done" });
+    out({ t: "full-done", processed });
   }
 
   chrome.runtime.onMessage.addListener((m) => {

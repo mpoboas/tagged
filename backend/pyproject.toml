@@ -1,11 +1,37 @@
 [project]
 name = "tagged"
 version = "0.1.0"
-requires-python = ">=3.10,<3.13"
-dependencies = ["insightface>=0.7.3", "onnxruntime>=1.18", "numpy", "opencv-python-headless"]
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "insightface>=0.7.3",
+    "onnxruntime>=1.18",
+    "numpy",
+    "opencv-python-headless",
+    "scipy",                 # tagged cluster
+    "scikit-image<2.2",      # insightface's face_align uses SimilarityTransform.estimate, removed in 2.2
+]
 
 [project.scripts]
 tagged = "tagged.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[tool.uv]
+# insightface depends on the GUI build of OpenCV; both wheels install a cv2 module and the last one wins.
+# Keep only the headless one (no libGL needed in the container).
+override-dependencies = ["opencv-python; sys_platform == 'never'"]
+
+[tool.ruff]
+line-length = 140
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501", "E741"]   # long HTML/JS strings; short loop names
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [build-system]
 requires = ["hatchling"]

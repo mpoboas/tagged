@@ -62,7 +62,7 @@ def cmd_eval(a):
             truth.setdefault(img.name, set())
             if d.name != "_none":
                 truth[img.name].add(d.name)
-    scores = {n: best_scores(embed_image(p), people) for n, p in paths.items()}
+    scores = {n: best_scores(embed_image(p, a.max_side), people) for n, p in paths.items()}
     if a.fp is not None:
         fps = sorted(((s, n, name) for name, sc in scores.items() for n, s in sc.items() if s >= a.fp and n not in truth[name]), reverse=True)
         rows = "".join(
@@ -103,6 +103,7 @@ def main():
     e.add_argument("--refs", default="data/refs")
     e.add_argument("--test", default="data/test")
     e.add_argument("--fp", type=float, help="list false positives at this threshold and write data/fp.html")
+    e.add_argument("--max-side", type=int, default=840, help="shrink test photos to this size first, like Facebook thumbnails (0 = off)")
     e.set_defaults(fn=cmd_eval)
     c = sub.add_parser("cluster", help="detect + cluster all faces in a photo folder")
     c.add_argument("--photos", default="data/raw")

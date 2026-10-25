@@ -1,0 +1,5 @@
+# keep the launchers runnable on each OS
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.vbs text eol=crlf
+*.command text eol=lf
