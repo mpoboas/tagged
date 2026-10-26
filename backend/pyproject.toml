@@ -4,7 +4,8 @@ version = "0.1.0"
 requires-python = ">=3.11,<3.13"
 dependencies = [
     "insightface>=0.7.3",
-    "onnxruntime>=1.18",
+    "onnxruntime>=1.18; sys_platform != 'win32'",
+    "onnxruntime-directml>=1.18; sys_platform == 'win32'",   # same module as onnxruntime, adds the GPU (any DirectX 12 card)
     "numpy",
     "opencv-python-headless",
     "scipy",                 # tagged cluster

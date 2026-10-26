@@ -49,26 +49,44 @@ def _app():
 
     threads = cpu_budget()
     real_session = ort.InferenceSession
+    have = ort.get_available_providers()
+    gpu = [p for p in ("CoreMLExecutionProvider", "CUDAExecutionProvider", "DmlExecutionProvider") if p in have]
+    if os.environ.get("TAGGED_CPU"):
+        gpu = []
 
     def limited(path, sess_options=None, *args, **kw):          # insightface builds its sessions without options
         so = sess_options or ort.SessionOptions()
         so.intra_op_num_threads = threads
         so.inter_op_num_threads = 1
+        if "DmlExecutionProvider" in kw.get("providers", []):    # DirectML requires these two
+            so.enable_mem_pattern = False
+            so.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
         return real_session(path, so, *args, **kw)
 
     ort.InferenceSession = limited
     print(f"inference threads: {threads}", flush=True)
 
-    have = ort.get_available_providers()
-    providers = [p for p in ("CoreMLExecutionProvider", "CUDAExecutionProvider", "CPUExecutionProvider") if p in have]
     # INSIGHTFACE_HOME lets a container keep the (non-commercial licence) models in a volume instead of in the image.
     # Only detection + recognition: buffalo_l also ships landmark and gender/age models we never use (~20% faster).
-    app = FaceAnalysis(
-        name="buffalo_l", root=os.environ.get("INSIGHTFACE_HOME", "~/.insightface"), providers=providers,
-        allowed_modules=["detection", "recognition"],
-    )
     size = int(os.environ.get("TAGGED_DET_SIZE", "960"))   # 640 is ~2x faster on CPU, small faces are found a bit less
-    app.prepare(ctx_id=0, det_size=(size, size))
+
+    def build(providers):
+        app = FaceAnalysis(
+            name="buffalo_l", root=os.environ.get("INSIGHTFACE_HOME", "~/.insightface"), providers=providers,
+            allowed_modules=["detection", "recognition"],
+        )
+        app.prepare(ctx_id=0, det_size=(size, size))
+        return app
+
+    try:
+        app = build(gpu + ["CPUExecutionProvider"])
+    except Exception as e:                                       # a broken GPU driver must not take the server down
+        if not gpu:
+            raise
+        print(f"GPU provider failed ({e}); falling back to CPU", flush=True)
+        gpu = []
+        app = build(["CPUExecutionProvider"])
+    print(f"inference on: {', '.join(gpu) or 'CPU'}", flush=True)
     return app
 
 

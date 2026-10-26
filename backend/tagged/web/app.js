@@ -15,7 +15,7 @@ const HINT = {
 const CFG = { certain: .5, review: .35, minDet: .6, minFace: 20, extension: null, googleClientId: null };
 const S = { tab: 'certeza', person: '', view: 'sessions', search: '', onlyUnrev: false, hiddenClusters: new Set() };
 let SESS = [], cur = null, LIVE = null, PEOPLE = [], PE = {}, PVER = 0, IVER = 0, CUR = [], LB = null, FOC = null, DL = null, GP = null;
-let collecting = false, lastCollectMsg = 0, MODEL = 'loading', MODEL_ERR = null;
+let collecting = false, CT0 = 0, SC = { t0: 0, n: 0 }, lastCollectMsg = 0, MODEL = 'loading', MODEL_ERR = null;
 let EXT = { ok: false, v: null, fb: false, fbUrl: null, seen: 0 };
 
 const cfg = (() => { try { return JSON.parse(localStorage.getItem('tagged.cfg') || '{}') } catch (e) { return {} } })();
@@ -32,6 +32,9 @@ const slug = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-
 const fmt = t => new Date(t).toLocaleString('pt-PT', { dateStyle: 'short', timeStyle: 'short' });
 const pad = n => String(n).padStart(2, '0');
 const fmtDay = t => new Date(t).toLocaleDateString('pt-PT', { day: 'numeric', month: 'short', year: 'numeric' });
+// ' · 1.4 s por foto · faltam cerca de 2 min' for any process that has done n items since t0 (performance.now()) with `left` to go.
+const pace = (t0, n, left) => { if (!t0 || n < 1) return ''; const per = (performance.now() - t0) / n / 1000;
+  return ` · ${per < 10 ? per.toFixed(1) : Math.round(per)} s por foto` + (n > 1 && left > 0 ? ` · faltam cerca de ${fmtT(per * left)}` : '') };
 const fmtT = sec => sec < 60 ? `${Math.max(1, Math.round(sec))} s` : `${Math.floor(sec / 60)} min ${pad(Math.round(sec % 60))} s`;
 const vcmp = (a, b) => { const x = String(a || '0').split('.').map(Number), y = String(b || '0').split('.').map(Number); for (let i = 0; i < 3; i++) { const d = (x[i] || 0) - (y[i] || 0); if (d) return d } return 0 };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -62,25 +65,24 @@ function showProg(o) {
 }
 function updateProg() {
   clearTimeout(progTimer);
-  if (GP) return showProg({ icon: '☁️', title: GP.title, sub: GP.total ? `Foto ${Math.min(GP.n + 1, GP.total)} de ${GP.total}` : '', pct: GP.total ? 100 * GP.n / GP.total : null });
+  if (GP) return showProg({ icon: '☁️', title: GP.title, sub: GP.total ? `Foto ${Math.min(GP.n + 1, GP.total)} de ${GP.total}` + pace(GP.t0, GP.n, GP.total - GP.n) : '', pct: GP.total ? 100 * GP.n / GP.total : null });
   if (DL) {
     const n = DL.n, t = DL.total;
     if (DL.finishing) return showProg({ icon: '🗜️', title: 'A preparar as fotos…', sub: 'A juntar as fotos e a escrever a data em cada uma.', pct: 100 });
-    const el = (performance.now() - DL.t0) / 1000, eta = n > 1 ? el / n * (t - n) : null;
     return showProg({ icon: '📸', title: DL.stopping ? 'A parar…' : 'A buscar as fotos em boa qualidade', btn: DL.stopping ? null : ['stop', 'Parar'],
-      sub: `Foto ${Math.min(n + 1, t)} de ${t}` + (eta != null ? ` · faltam cerca de ${fmtT(eta)}` : '') + ' · deixa o Chrome aberto', pct: 100 * n / t });
+      sub: `Foto ${Math.min(n + 1, t)} de ${t}` + pace(DL.t0, n, t - n) + ' · deixa o Chrome aberto', pct: 100 * n / t });
   }
   if (collecting) {
     const n = LIVE ? LIVE.photos.length : 0, x = LIVE && LIVE.expected;
     return showProg({ icon: '📥', title: 'A importar o álbum do Facebook…', btn: ['stop', 'Parar'],
-      sub: `${n} fotos encontradas` + (x ? ` de ${x}` : '') + ' · o Tagged vai fazendo scroll no álbum por ti', pct: x ? Math.min(100, 100 * n / x) : null });
+      sub: `${n} fotos encontradas` + (x ? ` de ${x}` : '') + pace(CT0, n, x ? x - n : 0) + ' · o Tagged vai fazendo scroll no álbum por ti', pct: x ? Math.min(100, 100 * n / x) : null });
   }
   if (MODEL === 'error') return showProg({ icon: '⚠️', title: 'O reconhecimento facial não arrancou', sub: MODEL_ERR || '', tone: 'error' });
   const S_ = LIVE || cur;
   const pend = S_ ? S_.photos.filter(p => !p.faces && !p.err).length : 0;
   if (pend && MODEL !== 'ready') return showProg({ icon: '⏳', title: MODEL === 'offline' ? 'Sem ligação ao servidor' : 'A preparar o reconhecimento facial…',
     sub: MODEL === 'offline' ? 'A tentar de novo…' : 'Na primeira vez o Tagged descarrega o que precisa (~280 MB); demora um ou dois minutos.', pct: null });
-  if (pend) { const tot = S_.photos.length, k = tot - pend; return showProg({ icon: '🔍', title: 'A reconhecer quem está nas fotos…', sub: `${k} de ${tot} fotos analisadas`, pct: 100 * k / tot }) }
+  if (pend) { const tot = S_.photos.length, k = tot - pend; return showProg({ icon: '🔍', title: 'A reconhecer quem está nas fotos…', sub: `${k} de ${tot} fotos analisadas` + pace(SC.t0, SC.n, pend), pct: 100 * k / tot }) }
   if (doneInfo && Date.now() < doneUntil) { progTimer = setTimeout(updateProg, Math.max(50, doneUntil - Date.now())); return showProg({ icon: '✅', title: doneInfo.title, sub: doneInfo.sub, pct: 100, tone: 'done' }) }
   showProg(null);
 }
@@ -204,7 +206,7 @@ function collect() {
   if (vcmp(EXT.v, EXT_MIN) < 0) return popup('Falta atualizar a ligação ao Facebook', '<p>A ligação que tens instalada é antiga. Atualiza-a e tenta outra vez.</p><div class="mt-3"><button type="button" class="btn btn-primary btn-sm" data-act="goto" data-v="extension">Mostrar como se faz</button></div>');
   if (!EXT.fb) return popup('Abre o álbum no Facebook', '<ol class="list-decimal ml-5 space-y-1"><li>Noutro separador do Chrome, abre o <b>álbum</b> no Facebook (a página com a grelha de fotos).</li><li>Volta aqui e carrega outra vez em <b>Importar álbum</b>.</li></ol><p class="mt-2 text-sm opacity-70">Não precisas de fazer scroll: o Tagged percorre o álbum por ti.</p>');
   const s = { id: Date.now(), name: 'A recolher…', created: Date.now(), expected: null, auto: true, photos: [], map: {}, albumUrl: EXT.fbUrl };
-  LIVE = s; collecting = true; lastCollectMsg = Date.now(); badge(); openSession(s); note(''); updateProg();
+  LIVE = s; collecting = true; CT0 = performance.now(); lastCollectMsg = Date.now(); badge(); openSession(s); note(''); updateProg();
   send({ t: 'collect', reset: true }); persistStorage();
 }
 setInterval(() => { if (collecting && Date.now() - lastCollectMsg > 20000) collectFailed('O Tagged deixou de receber fotos do Facebook. Recarrega o separador do Facebook (F5) e tenta outra vez.') }, 2000);
@@ -277,20 +279,20 @@ function pump() {
   if (MODEL !== 'ready') return;
   while (running < 3 && queue.length) {
     const { s, p } = queue.shift(); if (s.deleted || p.faces) continue;
-    running++;
+    running++; if (!SC.t0) SC.t0 = performance.now();
     fetch('/api/score?name=' + encodeURIComponent(p.key), { method: 'POST', body: new Blob([p.bytes]) })
       .then(async r => {
         const d = await r.json().catch(() => ({ error: 'HTTP ' + r.status }));
         if (r.status === 503) { queue.unshift({ s, p }); MODEL = d.model || 'loading'; MODEL_ERR = d.error; pollModel(); return }
         if (!r.ok) throw Object.assign(new Error(d.error || 'HTTP ' + r.status), { perm: r.status === 400 || r.status === 413 });
-        p.faces = d.faces.map(f => ({ bbox: f.bbox, det: f.det, emb: Float32Array.from(f.emb) })); p.w = d.w; p.h = d.h; p.err = null; p.tries = 0; p._i = null;
+        p.faces = d.faces.map(f => ({ bbox: f.bbox, det: f.det, emb: Float32Array.from(f.emb) })); p.w = d.w; p.h = d.h; p.err = null; p.tries = 0; p._i = null; SC.n++;
       })
       .catch(e => {
         p.tries = (p.tries || 0) + 1;
         if (!e.perm && p.tries < 3) { setTimeout(() => enqueue(s, p), 1500 * 2 ** p.tries); return }
         p.err = String(e.message || e); p.perm = !!e.perm; p._i = null;
       })
-      .finally(() => { running--; touch(s, p); pump(); if (cur === s || LIVE === s) render() });
+      .finally(() => { running--; if (!running && !queue.length) SC = { t0: 0, n: 0 }; touch(s, p); pump(); if (cur === s || LIVE === s) render() });
   }
 }
 function retryErrors() { if (!cur) return; for (const p of cur.photos) if (p.err) { p.err = null; p.perm = false; p.tries = 0; p._i = null; enqueue(cur, p) } render() }
@@ -507,7 +509,7 @@ function viewSearch() {
     <label class="form-control flex-1 min-w-[16rem]"><span class="label-text text-sm mb-1">Rigor: <b id="qminv">${qLabel(Q.min)}</b></span>
      <input type="range" min="0.30" max="0.90" step="0.01" value="${Q.min}" class="range range-primary range-xs" data-inp="qmin" aria-label="Rigor da pesquisa" aria-valuetext="${qLabel(Q.min)}"></label></div>
    <div id="qsum" class="text-sm opacity-80" role="status" aria-live="polite"></div><div id="qchips" class="flex flex-wrap gap-2"></div><div id="qact"></div></div></section>
-   <div id="qgrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"></div><div id="qmore" class="text-center mt-4"></div>`;
+   <div id="qgrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4"></div><div id="qmore" class="text-center mt-4"></div>`;
   if (Q.name && PE[Q.name] && !(Q.hits && Q.sig === qSig())) runSearch(); else renderSearch();
 }
 async function runSearch() {
@@ -575,18 +577,19 @@ function viewSession() {
     <label class="flex items-center gap-2" title="É a data que fica escrita em cada foto descarregada. Por defeito é o dia em que o Facebook recebeu as fotos."><span>Data das fotos:</span><input id="sdate" type="datetime-local" step="1" class="input input-bordered input-xs ${cur.date ? '' : 'input-warning'}" value="${cur.date || ''}" data-chg="date"></label>
     ${cur.albumUrl ? `<button type="button" class="link" data-act="open-album" title="Abre este álbum no separador do Facebook">Ver no Facebook ↗</button>` : ''}</div></div>
   <div id="errs"></div>
+  <div id="lowres" class="hidden alert alert-warning text-sm mb-4 py-2" role="status"></div>
   <div role="tablist" class="tabs tabs-boxed overflow-x-auto max-w-full w-fit" id="tabs" aria-label="Grupos de fotos"></div>
   <p id="hint" class="text-sm opacity-70 mt-2 mb-4 max-w-3xl"></p>
   <div id="filters" class="flex flex-wrap gap-3 items-center mb-4"><label class="flex items-center gap-2 text-sm"><span class="opacity-70">Mostrar:</span><select id="person" aria-label="Filtrar por pessoa" class="select select-bordered select-sm" data-chg="person"></select></label>
    <label id="unrevl" class="label cursor-pointer gap-2 text-sm"><input type="checkbox" class="checkbox checkbox-sm" data-chg="unrev" ${S.onlyUnrev ? 'checked' : ''}>só as que ainda não confirmei</label>
    <span id="count" class="text-sm opacity-60"></span></div>
-  <div id="grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+  <div id="grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4"></div>
   <details class="card bg-base-100 shadow mt-8"><summary class="card-body p-4 cursor-pointer font-medium">Ajustar o reconhecimento</summary><div class="px-4 pb-4 space-y-2">
    <p class="text-sm opacity-70">Se o Tagged anda a marcar fotos demais (com pessoas erradas), sobe o rigor. Se está a deixar escapar fotos que são mesmo dos teus amigos, desce.</p>
    <div class="flex items-center gap-3"><span class="text-xs opacity-70 w-24 text-right">Mais fotos, menos seguras</span><input id="rigor" type="range" min=".35" max=".80" step=".01" value="${t.certain}" class="range range-primary range-xs flex-1" data-inp="rigor" aria-label="Rigor do reconhecimento" aria-valuetext="${rigorLabel(t.certain)}"><span class="text-xs opacity-70 w-24">Só as mais seguras</span></div>
    <div class="flex items-center justify-between text-sm"><span>Agora: <b id="rigorv">${rigorLabel(t.certain)}</b></span><button type="button" class="btn btn-ghost btn-xs" data-act="th-reset">Voltar ao normal</button></div></div></details>
   <div class="h-28" aria-hidden="true"></div>
-  <div id="bar" class="fixed bottom-0 inset-x-0 z-20 bg-base-100/95 backdrop-blur border-t border-base-300 shadow-[0_-4px_12px_rgba(0,0,0,.25)]"><div class="max-w-7xl mx-auto px-4 py-2 sm:py-3 space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-4">
+  <div id="bar" class="fixed bottom-0 inset-x-0 z-20 bg-base-100/95 backdrop-blur border-t border-base-300 shadow-[0_-4px_12px_rgba(0,0,0,.25)]"><div class="max-w-[min(100%,110rem)] mx-auto px-4 py-2 sm:py-3 space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-4">
    <div class="flex items-center gap-3 sm:flex-1"><span id="barn" class="font-medium text-sm sm:text-base flex-1 min-w-0"></span>
     <span class="flex gap-1 shrink-0"><button type="button" class="btn btn-xs" data-act="bulk" data-v="1" title="Marca todas as fotos que estão a ser mostradas">Marcar todas</button><button type="button" class="btn btn-xs btn-ghost" data-act="bulk" data-v="0" title="Desmarca todas as fotos que estão a ser mostradas">Desmarcar</button></span></div>
    <div class="flex gap-2"><button id="dl" type="button" class="btn btn-success btn-sm flex-1 sm:flex-none" data-act="dl" data-mode="zip" title="Junta as fotos escolhidas num ficheiro .zip, em boa qualidade e com a data certa">Descarregar</button>
@@ -603,7 +606,11 @@ function draw() {
   const A = cur.photos.map(info), cnt = { certeza: 0, rever: 0, 'sem match': 0, pending: 0, erro: 0 };
   A.forEach(i => cnt[i.c]++); const nsel = A.filter(sel).length, unrev = A.filter(i => i.c === 'rever' && !i.p.rev).length;
   $('sum').textContent = `${nf(A.length, 'foto', 'fotos')}${cur.expected && cur.expected > A.length ? ` de ${cur.expected}` : ''} · ${cnt.pending ? `a analisar ${cnt.pending}…` : cnt.certeza ? `${nf(cnt.certeza, 'reconhecida', 'reconhecidas')}` : 'nenhum amigo reconhecido ainda'}`;
-  $('errs').innerHTML = cnt.erro ? `<div class="alert alert-error mb-4 text-sm"><span>${cnt.erro === 1 ? '1 foto não foi analisada' : cnt.erro + ' fotos não foram analisadas'} (${esc(A.find(i => i.c === 'erro').p.err)}).</span><button type="button" class="btn btn-sm" data-act="retry">Tentar de novo</button></div>` : '';
+  // Facebook serves smaller thumbnails to screens without zoom/retina; below ~700px faces fall under the minimum size and are missed.
+  const sides = A.filter(i => i.p.w).map(i => Math.max(i.p.w, i.p.h)).sort((x, y) => x - y), med = sides[sides.length >> 1];
+  const lr = $('lowres'), small = sides.length >= 5 && med < 700;
+  lr.classList.toggle('hidden', !small);
+  if (small) lr.textContent = 'As fotos que o Facebook mostrou inicialmente são pequenas demais para reconhecer toda a gente com certeza (isto acontece em ecrãs grandes). Faz zoom no Chrome (Ctrl e +, até uns 150–200%) no separador do Facebook, volta a importar o álbum e o reconhecimento melhora.';
   const dots = { certeza: COL.certeza, rever: COL.rever, 'sem match': COL['sem match'] };
   $('tabs').innerHTML = TABS.map(([k, l]) => `<button type="button" role="tab" aria-selected="${S.tab === k}" class="tab h-auto py-2 gap-2 px-3 flex-nowrap shrink-0 whitespace-nowrap ${S.tab === k ? 'tab-active' : ''}" data-act="tab" data-v="${k}">${dots[k] ? `<span style="color:${dots[k]}" aria-hidden="true">●</span>` : '<span aria-hidden="true">🙂</span>'}${l}${k === 'unknown' ? '' : `<span class="badge badge-sm">${cnt[k]}</span>`}</button>`).join('');
   $('hint').textContent = HINT[S.tab] + (S.tab === 'rever' && unrev ? ` Faltam confirmar ${unrev}.` : '');
@@ -995,7 +1002,11 @@ function lb() {
   if (d.open && sig === LBSIG) return;   // a score arriving elsewhere must not wipe what is being typed here
   LBSIG = sig;
   $('lbbody').innerHTML = `<div class="flex flex-col items-center gap-3 max-h-full max-w-full">
-   <div class="relative inline-block"><img src="${i.p.url}" alt="" class="block max-h-[66vh] max-w-[92vw] rounded-lg">${svg(i)}</div>
+   ${i.p.w && i.p.h
+     // Fill the viewport (thumbnails are small, max-* alone never upscales): the box keeps the photo's aspect ratio, as wide as
+     // the screen allows and as tall as what is left under the controls, so the face boxes of the svg overlay stay aligned.
+     ? `<div class="relative" style="aspect-ratio:${i.p.w}/${i.p.h};width:min(96vw,calc((100dvh - ${face ? 14 : 11}rem) * ${i.p.w / i.p.h}))"><img src="${i.p.url}" alt="" class="block w-full h-full rounded-lg">${svg(i)}</div>`
+     : `<div class="relative inline-block"><img src="${i.p.url}" alt="" class="block max-h-[66dvh] max-w-[92vw] rounded-lg">${svg(i)}</div>`}
    <div class="flex flex-wrap items-center justify-center gap-2"><button type="button" class="btn btn-sm" data-act="nav" data-d="-1" ${k <= 0 ? 'disabled' : ''} aria-label="Anterior">←</button>${badges(i, 1)}
     <span class="text-sm opacity-70">${k + 1}/${CUR.length}</span>
     <button type="button" class="btn btn-sm ${on_ ? 'btn-success' : 'btn-outline'}" data-act="toggle" data-id="${i.id}">${on_ ? '✓ Vai ser descarregada' : 'Descarregar esta foto'} <span class="opacity-60">(espaço)</span></button>
@@ -1180,7 +1191,7 @@ async function finishDL() {
   const summary = nf(orig, 'original', 'originais') + (thumbs ? ` e ${nf(thumbs, 'miniatura', 'miniaturas')}` : '');
   try {
     if (D.mode === 'gphotos') {
-      DL = null; GP = { title: 'A enviar para o Google Fotos…', n: 0, total: D.order.length }; render();
+      DL = null; GP = { title: 'A enviar para o Google Fotos…', t0: performance.now(), n: 0, total: D.order.length }; render();
       const r = await uploadGoogle(D, files);
       doneInfo = { title: `${nf(r.ok, 'foto enviada', 'fotos enviadas')} para o Google Fotos`, sub: `álbum “${D.s.name}” · ${summary}` + (r.failed ? ` · ${r.failed} falharam` : '') };
       if (r.failed) note(`${nf(r.failed, 'foto não foi aceite', 'fotos não foram aceites')} pelo Google Fotos: ${r.firstError}`, true);
