@@ -58,7 +58,7 @@ function showProg(o) {
   const done = o.tone === 'done', bad = o.tone === 'error'; e.className = 'mb-4';
   e.innerHTML = `<div class="card bg-base-100 shadow border ${done ? 'border-success/40' : bad ? 'border-error/50' : 'border-primary/30'}"><div class="card-body p-4 gap-3">
   <div class="flex items-center gap-3"><div class="text-3xl leading-none ${o.pct == null && !done && !bad ? 'animate-pulse' : ''}" aria-hidden="true">${o.icon}</div>
-   <div class="flex-1 min-w-0"><div class="font-semibold">${esc(o.title)}</div><div class="text-sm opacity-70">${esc(o.sub || '')}</div></div>
+   <div class="flex-1 min-w-0"><div class="font-semibold">${esc(o.title)}</div><div class="text-sm opacity-80">${esc(o.sub || '')}</div></div>
    ${o.pct == null ? '' : `<div class="text-2xl font-bold tabular-nums ${done ? 'text-success' : 'text-primary'}">${Math.round(o.pct)}%</div>`}
    ${o.btn ? `<button type="button" class="btn btn-sm" data-act="${o.btn[0]}">${o.btn[1]}</button>` : ''}</div>
   ${bad ? '' : `<progress class="progress ${done ? 'progress-success' : 'progress-primary'} w-full h-3" ${o.pct == null ? '' : `value="${o.pct}" max="100"`}></progress>`}</div></div>`;
@@ -204,7 +204,7 @@ function collect() {
   if (collecting || DL) return;
   if (!EXT.ok) return popup('Primeiro liga o Tagged ao Facebook', '<p>Para importar um álbum, o Tagged precisa de uma pequena ligação ao Facebook no teu Chrome. Só se faz uma vez e demora um minuto.</p><div class="mt-3"><button type="button" class="btn btn-primary btn-sm" data-act="goto" data-v="extension">Mostrar como se faz</button></div>');
   if (vcmp(EXT.v, EXT_MIN) < 0) return popup('Falta atualizar a ligação ao Facebook', '<p>A ligação que tens instalada é antiga. Atualiza-a e tenta outra vez.</p><div class="mt-3"><button type="button" class="btn btn-primary btn-sm" data-act="goto" data-v="extension">Mostrar como se faz</button></div>');
-  if (!EXT.fb) return popup('Abre o álbum no Facebook', '<ol class="list-decimal ml-5 space-y-1"><li>Noutro separador do Chrome, abre o <b>álbum</b> no Facebook (a página com a grelha de fotos).</li><li>Volta aqui e carrega outra vez em <b>Importar álbum</b>.</li></ol><p class="mt-2 text-sm opacity-70">Não precisas de fazer scroll: o Tagged percorre o álbum por ti.</p>');
+  if (!EXT.fb) return popup('Abre o álbum no Facebook', '<ol class="list-decimal ml-5 space-y-1"><li>Noutro separador do Chrome, abre o <b>álbum</b> no Facebook (a página com a grelha de fotos).</li><li>Volta aqui e carrega outra vez em <b>Importar álbum</b>.</li></ol><p class="mt-2 text-sm opacity-80">Não precisas de fazer scroll: o Tagged percorre o álbum por ti.</p>');
   const s = { id: Date.now(), name: 'A recolher…', created: Date.now(), expected: null, auto: true, photos: [], map: {}, albumUrl: EXT.fbUrl };
   LIVE = s; collecting = true; CT0 = performance.now(); lastCollectMsg = Date.now(); badge(); openSession(s); note(''); updateProg();
   send({ t: 'collect', reset: true }); persistStorage();
@@ -225,7 +225,7 @@ function collectDone(m) {
   LIVE.expected = m.expected || LIVE.expected; if (m.url) LIVE.albumUrl = m.url;
   touch(LIVE); if (cur === LIVE && $('title')) $('title').value = LIVE.name;
   if (m.stopped) note(`Importação parada: ${m.count} fotos.`);
-  else if (m.expected && m.count < m.expected) popup('Faltam fotos do álbum', `<p>Só consegui importar ${m.count} de ${m.expected} fotos: faltam ${m.expected - m.count}.</p><p class="mt-2 opacity-70">Às vezes o Facebook conta vídeos ou fotos a que não tens acesso. Se faltarem muitas, recarrega o álbum no Facebook e carrega de novo em “Importar álbum” (cria um álbum novo).</p>`);
+  else if (m.expected && m.count < m.expected) popup('Faltam fotos do álbum', `<p>Só consegui importar ${m.count} de ${m.expected} fotos: faltam ${m.expected - m.count}.</p><p class="mt-2 opacity-80">Às vezes o Facebook conta vídeos ou fotos a que não tens acesso. Se faltarem muitas, recarrega o álbum no Facebook e carrega de novo em “Importar álbum” (cria um álbum novo).</p>`);
   else note(`Álbum importado: ${m.count} fotos` + (m.expected ? ` (o álbum tem ${m.expected}).` : '.'));
   render();
 }
@@ -417,7 +417,7 @@ const NAV = [['sessions', 'Álbuns'], ['settings', 'Pessoas'], ['search', 'Procu
 function setView(v) {
   S.view = v; closeBig(); if (v !== 'search') qRevoke(); if (v !== 'setup' && W.step === 'process') { W.run++; W.step = 'ready' }
   const lit = v === 'session' ? 'sessions' : v, nav = $('nav');
-  if (!nav.firstChild) nav.innerHTML = NAV.map(([k, l]) => `<button type="button" class="btn btn-sm shrink-0" data-act="view" data-v="${k}">${l}</button>`).join('');
+  if (!nav.firstChild) nav.innerHTML = NAV.map(([k, l]) => `<button type="button" class="btn btn-sm btn-ghost shrink-0 max-sm:min-h-10 [transition:none]" data-act="view" data-v="${k}">${l}</button>`).join('');
   nav.querySelectorAll('button').forEach(b => {   // update in place: no flicker, and keyboard focus stays where it was
     const on_ = b.dataset.v === lit; b.classList.toggle('btn-primary', on_); b.classList.toggle('btn-ghost', !on_);
     if (on_) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
@@ -437,11 +437,11 @@ function checklist() {
   const st = setupSteps(); if (st.every(x => x.done)) return '';
   const n = st.filter(x => x.done).length, next = st.find(x => !x.done);
   return `<section class="card bg-base-100 shadow border border-primary/30 mb-6" aria-labelledby="ck"><div class="card-body gap-3">
-   <div class="flex items-center gap-3"><h2 id="ck" class="card-title flex-1">Primeiros passos</h2><span class="text-sm opacity-70">${n} de ${st.length}</span></div>
+   <div class="flex items-center gap-3"><h2 id="ck" class="card-title flex-1">Primeiros passos</h2><span class="text-sm opacity-80">${n} de ${st.length}</span></div>
    <progress class="progress progress-primary w-full" value="${n}" max="${st.length}" aria-label="Progresso dos primeiros passos"></progress>
    <ol class="space-y-2">${st.map((x, i) => `<li class="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg p-2 ${x === next ? 'bg-base-200' : ''}">
      <span class="w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-sm font-bold ${x.done ? 'bg-success text-success-content' : x === next ? 'bg-primary text-primary-content' : 'bg-base-300'}" aria-hidden="true">${x.done ? '✓' : i + 1}</span>
-     <div class="flex-1 min-w-[12rem]"><div class="font-medium ${x.done ? 'line-through opacity-60' : ''}">${x.title}</div>${x.done ? '' : `<div class="text-sm opacity-70">${x.hint}</div>`}</div>
+     <div class="flex-1 min-w-[12rem]"><div class="font-medium ${x.done ? 'line-through opacity-60' : ''}">${x.title}</div>${x.done ? '' : `<div class="text-sm opacity-80">${x.hint}</div>`}</div>
      ${x.done ? '<span class="sr-only">feito</span>' : `<button type="button" class="btn btn-sm max-sm:ml-10 ${x === next ? 'btn-primary' : 'btn-ghost'}" data-act="onb" data-v="${x.id}">${x.go}</button>`}</li>`).join('')}</ol></div></section>`;
 }
 let covers = [];
@@ -449,17 +449,17 @@ function viewSessions() {
   covers.forEach(u => URL.revokeObjectURL(u)); covers = [];
   const L = SESS.slice().sort((a, b) => b.created - a.created);
   $('view').innerHTML = `<div class="flex flex-wrap items-end gap-3 mb-6"><div class="flex-1 min-w-[16rem]"><h1 class="text-2xl font-bold">Os meus álbuns</h1>
-   <p class="text-sm opacity-70">Importa um álbum do Facebook, vê onde estão os teus amigos e descarrega só essas fotos.</p></div>
+   <p class="text-sm opacity-80">Importa um álbum do Facebook, vê onde estão os teus amigos e descarrega só essas fotos.</p></div>
    <button type="button" class="btn btn-primary" data-act="collect" ${collecting || DL ? 'disabled' : ''}>＋ Importar álbum do Facebook</button></div>
    ${checklist()}
    ${L.length ? `<div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">${L.map(s => `<article class="card bg-base-100 shadow overflow-hidden transition hover:shadow-lg">
     <button type="button" class="text-left block w-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" data-act="open" data-id="${s.id}" aria-label="Abrir o álbum ${esc(s.name)}">
      <figure class="h-44 bg-base-300">${s.cover ? `<img data-cover="${s.id}" alt="" class="w-full h-full object-cover">` : ''}</figure>
      <div class="card-body p-4 gap-1"><h3 class="card-title text-base leading-snug">${esc(s.name)}</h3>
-      <div class="text-xs opacity-60">${fmtDay(s.date || s.created)} · ${nf(s.count, 'foto', 'fotos')}${s.expected && s.expected > s.count ? ` de ${s.expected}` : ''}</div>
-      <div class="flex flex-wrap gap-x-3 gap-y-1 text-sm mt-1">${s.certeza ? `<span style="color:${COL.certeza}">● ${nf(s.certeza, 'reconhecida', 'reconhecidas')}</span>` : '<span class="opacity-60">nenhum amigo reconhecido</span>'}${s.sel ? `<span class="opacity-80">${s.sel} para descarregar</span>` : ''}</div></div></button>
+      <div class="text-xs opacity-75">${fmtDay(s.date || s.created)} · ${nf(s.count, 'foto', 'fotos')}${s.expected && s.expected > s.count ? ` de ${s.expected}` : ''}</div>
+      <div class="flex flex-wrap gap-x-3 gap-y-1 text-sm mt-1">${s.certeza ? `<span style="color:${COL.certeza}">● ${nf(s.certeza, 'reconhecida', 'reconhecidas')}</span>` : '<span class="opacity-75">nenhum amigo reconhecido</span>'}${s.sel ? `<span class="opacity-90">${s.sel} para descarregar</span>` : ''}</div></div></button>
     <div class="px-3 pb-2 flex justify-end"><button type="button" class="btn btn-ghost btn-xs" data-act="del" data-id="${s.id}" aria-label="Eliminar o álbum ${esc(s.name)}">Eliminar</button></div></article>`).join('')}</div>`
-    : (setupSteps().every(x => x.done) ? `<div class="text-center py-16 opacity-80 space-y-2"><div class="text-4xl" aria-hidden="true">🖼️</div><p class="text-lg">Ainda não importaste nenhum álbum.</p><p class="text-sm">Abre um álbum no Facebook e carrega em “Importar álbum do Facebook”.</p></div>` : '')}`;
+    : (setupSteps().every(x => x.done) ? `<div class="text-center py-16 opacity-90 space-y-2"><div class="text-4xl" aria-hidden="true">🖼️</div><p class="text-lg">Ainda não importaste nenhum álbum.</p><p class="text-sm">Abre um álbum no Facebook e carrega em “Importar álbum do Facebook”.</p></div>` : '')}`;
   if (db) for (const s of L) if (s.cover) idb('photos', 'readonly', st => st.get([s.id, s.cover])).then(r => {
     const img = document.querySelector(`img[data-cover="${s.id}"]`); if (!r || !img) return;
     const u = URL.createObjectURL(new Blob([r.bytes], { type: 'image/jpeg' })); covers.push(u); img.src = u;
@@ -502,13 +502,13 @@ function viewSearch() {
   qRevoke();
   if (Q.min == null) Q.min = Math.max(.3, th().review);
   $('view').innerHTML = noPeople() + `<section class="card bg-base-100 shadow mb-4"><div class="card-body gap-3">
-   <h2 class="card-title">Em que fotos aparece…?</h2><p class="text-sm opacity-70 -mt-2">Escolhe uma pessoa e vê todas as fotos dela, de todos os álbuns que importaste.</p>
+   <h2 class="card-title">Em que fotos aparece…?</h2><p class="text-sm opacity-80 -mt-2">Escolhe uma pessoa e vê todas as fotos dela, de todos os álbuns que importaste.</p>
    <div class="flex flex-wrap items-end gap-4">
     <label class="form-control"><span class="label-text text-sm mb-1">Pessoa</span>
      <input id="qperson" data-combo="only" class="input input-bordered input-sm w-64" placeholder="escreve um nome…" value="${esc(Q.name)}" data-chg="qperson" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="cb-list"></label>
     <label class="form-control flex-1 min-w-[16rem]"><span class="label-text text-sm mb-1">Rigor: <b id="qminv">${qLabel(Q.min)}</b></span>
      <input type="range" min="0.30" max="0.90" step="0.01" value="${Q.min}" class="range range-primary range-xs" data-inp="qmin" aria-label="Rigor da pesquisa" aria-valuetext="${qLabel(Q.min)}"></label></div>
-   <div id="qsum" class="text-sm opacity-80" role="status" aria-live="polite"></div><div id="qchips" class="flex flex-wrap gap-2"></div><div id="qact"></div></div></section>
+   <div id="qsum" class="text-sm opacity-90" role="status" aria-live="polite"></div><div id="qchips" class="flex flex-wrap gap-2"></div><div id="qact"></div></div></section>
    <div id="qgrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4"></div><div id="qmore" class="text-center mt-4"></div>`;
   if (Q.name && PE[Q.name] && !(Q.hits && Q.sig === qSig())) runSearch(); else renderSearch();
 }
@@ -540,7 +540,7 @@ function renderSearch() {
   chips.innerHTML = per.size > 1 ? [['', 'Todas', all.length], ...[...per].sort((a, b) => b[1] - a[1]).map(([sid, n]) => [sid, (sessOf(sid) || {}).name || 'Álbum', n])]
     .map(([sid, label, n]) => `<button type="button" class="btn btn-xs ${(Q.sess == null ? '' : String(Q.sess)) === String(sid) ? 'btn-primary' : 'btn-outline'}" data-act="q-sess" data-sid="${sid}">${esc(label)} (${n})</button>`).join('') : '';
   $('qact').innerHTML = list.length ? `<div class="flex flex-wrap items-center gap-2"><button type="button" id="qdl" class="btn btn-success btn-sm" data-act="q-dl" title="Vai buscar as fotos marcadas em boa qualidade, álbum a álbum, e junta-as num .zip"></button>
-    <button type="button" class="btn btn-xs" data-act="q-all" data-v="1">Marcar todas</button><button type="button" class="btn btn-xs btn-ghost" data-act="q-all" data-v="0">Desmarcar</button><span id="qpicked" class="text-sm opacity-70"></span></div>` : '';
+    <button type="button" class="btn btn-xs" data-act="q-all" data-v="1">Marcar todas</button><button type="button" class="btn btn-xs btn-ghost" data-act="q-all" data-v="0">Desmarcar</button><span id="qpicked" class="text-sm opacity-80"></span></div>` : '';
   qCount();
   grid.innerHTML = list.slice(0, Q.shown).map((h, i) => {
     if (!h.url) { h.url = URL.createObjectURL(new Blob([h.bytes], { type: 'image/jpeg' })); Q.urls.push(h.url) }
@@ -549,7 +549,7 @@ function renderSearch() {
      <img src="${h.url}" alt="" loading="lazy" decoding="async" class="w-full" width="${h.w}" height="${h.h}"></button>
      <svg viewBox="0 0 ${h.w} ${h.h}" class="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true"><rect x="${x1}" y="${y1}" width="${x2 - x1}" height="${y2 - y1}" fill="none" stroke="${COL[c]}" stroke-width="${k}"></rect></svg></div>
      <div class="card-body p-3 gap-1"><div class="flex flex-wrap gap-1"><span class="badge" style="border-color:${COL[c]}" title="${Math.round(h.score * 100)}% de semelhança">${c === 'rever' ? 'talvez ' : ''}${esc(Q.name)}</span></div>
-     <div class="text-xs opacity-60 truncate" title="${esc(s.name || '')}">${esc(s.name || 'Álbum')} · ${s.date ? fmt(s.date) : s.created ? fmt(s.created) : ''}</div></div></article>`;
+     <div class="text-xs opacity-75 truncate" title="${esc(s.name || '')}">${esc(s.name || 'Álbum')} · ${s.date ? fmt(s.date) : s.created ? fmt(s.created) : ''}</div></div></article>`;
   }).join('');
   more.innerHTML = list.length > Q.shown ? `<button type="button" class="btn btn-sm" data-act="q-more">Mostrar mais (${list.length - Q.shown})</button>` : '';
 }
@@ -573,26 +573,26 @@ function viewSession() {
   $('view').innerHTML = noPeople() + `<div class="mb-1"><button type="button" class="btn btn-ghost btn-sm -ml-3" data-act="view" data-v="sessions">← Álbuns</button></div>
   <div class="mb-4">
    <input id="title" aria-label="Nome do álbum" class="input bg-transparent border-transparent hover:border-base-300 focus:border-primary text-2xl font-bold w-full px-2 -mx-2 h-auto py-1" value="${esc(cur.name)}" data-chg="title" title="Clica para mudar o nome do álbum">
-   <div class="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm opacity-80 mt-1"><span id="sum"></span>
+   <div class="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm opacity-90 mt-1"><span id="sum"></span>
     <label class="flex items-center gap-2" title="É a data que fica escrita em cada foto descarregada. Por defeito é o dia em que o Facebook recebeu as fotos."><span>Data das fotos:</span><input id="sdate" type="datetime-local" step="1" class="input input-bordered input-xs ${cur.date ? '' : 'input-warning'}" value="${cur.date || ''}" data-chg="date"></label>
     ${cur.albumUrl ? `<button type="button" class="link" data-act="open-album" title="Abre este álbum no separador do Facebook">Ver no Facebook ↗</button>` : ''}</div></div>
   <div id="errs"></div>
   <div id="lowres" class="hidden alert alert-warning text-sm mb-4 py-2" role="status"></div>
   <div role="tablist" class="tabs tabs-boxed overflow-x-auto max-w-full w-fit" id="tabs" aria-label="Grupos de fotos"></div>
-  <p id="hint" class="text-sm opacity-70 mt-2 mb-4 max-w-3xl"></p>
-  <div id="filters" class="flex flex-wrap gap-3 items-center mb-4"><label class="flex items-center gap-2 text-sm"><span class="opacity-70">Mostrar:</span><select id="person" aria-label="Filtrar por pessoa" class="select select-bordered select-sm" data-chg="person"></select></label>
+  <p id="hint" class="text-sm opacity-80 mt-2 mb-4 max-w-3xl"></p>
+  <div id="filters" class="flex flex-wrap gap-3 items-center mb-4"><label class="flex items-center gap-2 text-sm"><span class="opacity-80">Mostrar:</span><select id="person" aria-label="Filtrar por pessoa" class="select select-bordered select-sm" data-chg="person"></select></label>
    <label id="unrevl" class="label cursor-pointer gap-2 text-sm"><input type="checkbox" class="checkbox checkbox-sm" data-chg="unrev" ${S.onlyUnrev ? 'checked' : ''}>só as que ainda não confirmei</label>
-   <span id="count" class="text-sm opacity-60"></span></div>
+   <span id="count" class="text-sm opacity-75"></span></div>
   <div id="grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4"></div>
   <details class="card bg-base-100 shadow mt-8"><summary class="card-body p-4 cursor-pointer font-medium">Ajustar o reconhecimento</summary><div class="px-4 pb-4 space-y-2">
-   <p class="text-sm opacity-70">Se o Tagged anda a marcar fotos demais (com pessoas erradas), sobe o rigor. Se está a deixar escapar fotos que são mesmo dos teus amigos, desce.</p>
-   <div class="flex items-center gap-3"><span class="text-xs opacity-70 w-24 text-right">Mais fotos, menos seguras</span><input id="rigor" type="range" min=".35" max=".80" step=".01" value="${t.certain}" class="range range-primary range-xs flex-1" data-inp="rigor" aria-label="Rigor do reconhecimento" aria-valuetext="${rigorLabel(t.certain)}"><span class="text-xs opacity-70 w-24">Só as mais seguras</span></div>
+   <p class="text-sm opacity-80">Se o Tagged anda a marcar fotos demais (com pessoas erradas), sobe o rigor. Se está a deixar escapar fotos que são mesmo dos teus amigos, desce.</p>
+   <div class="flex items-center gap-3"><span class="text-xs opacity-80 w-24 text-right">Mais fotos, menos seguras</span><input id="rigor" type="range" min=".35" max=".80" step=".01" value="${t.certain}" class="range range-primary range-xs flex-1" data-inp="rigor" aria-label="Rigor do reconhecimento" aria-valuetext="${rigorLabel(t.certain)}"><span class="text-xs opacity-80 w-24">Só as mais seguras</span></div>
    <div class="flex items-center justify-between text-sm"><span>Agora: <b id="rigorv">${rigorLabel(t.certain)}</b></span><button type="button" class="btn btn-ghost btn-xs" data-act="th-reset">Voltar ao normal</button></div></div></details>
   <div class="h-28" aria-hidden="true"></div>
   <div id="bar" class="fixed bottom-0 inset-x-0 z-20 bg-base-100/95 backdrop-blur border-t border-base-300 shadow-[0_-4px_12px_rgba(0,0,0,.25)]"><div class="max-w-[min(100%,110rem)] mx-auto px-4 py-2 sm:py-3 space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-4">
    <div class="flex items-center gap-3 sm:flex-1"><span id="barn" class="font-medium text-sm sm:text-base flex-1 min-w-0"></span>
-    <span class="flex gap-1 shrink-0"><button type="button" class="btn btn-xs" data-act="bulk" data-v="1" title="Marca todas as fotos que estão a ser mostradas">Marcar todas</button><button type="button" class="btn btn-xs btn-ghost" data-act="bulk" data-v="0" title="Desmarca todas as fotos que estão a ser mostradas">Desmarcar</button></span></div>
-   <div class="flex gap-2"><button id="dl" type="button" class="btn btn-success btn-sm flex-1 sm:flex-none" data-act="dl" data-mode="zip" title="Junta as fotos escolhidas num ficheiro .zip, em boa qualidade e com a data certa">Descarregar</button>
+    <span id="bulk" class="flex gap-1 shrink-0"><button id="bulk1" type="button" class="btn btn-sm max-sm:min-h-10" data-act="bulk" data-v="1" title="Marca todas as fotos que estão a ser mostradas">Marcar todas</button><button id="bulk0" type="button" class="btn btn-sm btn-ghost max-sm:min-h-10" data-act="bulk" data-v="0" title="Desmarca todas as fotos que estão a ser mostradas">Desmarcar</button></span></div>
+   <div class="flex gap-2"><button id="dl" type="button" class="btn btn-success btn-sm max-sm:min-h-11 flex-1 sm:flex-none" data-act="dl" data-mode="zip" title="Junta as fotos escolhidas num ficheiro .zip, em boa qualidade e com a data certa">Descarregar</button>
    ${CFG.googleClientId ? `<button id="gp" type="button" class="btn btn-info btn-sm flex-1 sm:flex-none" data-act="dl" data-mode="gphotos">Enviar para o Google Fotos</button>` : ''}</div></div></div>`;
   CARDS.clear(); draw();
 }
@@ -612,19 +612,24 @@ function draw() {
   lr.classList.toggle('hidden', !small);
   if (small) lr.textContent = 'As fotos que o Facebook mostrou inicialmente são pequenas demais para reconhecer toda a gente com certeza (isto acontece em ecrãs grandes). Faz zoom no Chrome (Ctrl e +, até uns 150–200%) no separador do Facebook, volta a importar o álbum e o reconhecimento melhora.';
   const dots = { certeza: COL.certeza, rever: COL.rever, 'sem match': COL['sem match'] };
-  $('tabs').innerHTML = TABS.map(([k, l]) => `<button type="button" role="tab" aria-selected="${S.tab === k}" class="tab h-auto py-2 gap-2 px-3 flex-nowrap shrink-0 whitespace-nowrap ${S.tab === k ? 'tab-active' : ''}" data-act="tab" data-v="${k}">${dots[k] ? `<span style="color:${dots[k]}" aria-hidden="true">●</span>` : '<span aria-hidden="true">🙂</span>'}${l}${k === 'unknown' ? '' : `<span class="badge badge-sm">${cnt[k]}</span>`}</button>`).join('');
+  $('tabs').innerHTML = TABS.map(([k, l]) => `<button type="button" role="tab" aria-selected="${S.tab === k}" class="tab h-auto py-2 max-sm:py-3 gap-2 px-3 flex-nowrap shrink-0 whitespace-nowrap ${S.tab === k ? 'tab-active' : ''}" data-act="tab" data-v="${k}">${dots[k] ? `<span style="color:${dots[k]}" aria-hidden="true">●</span>` : '<span aria-hidden="true">🙂</span>'}${l}${k === 'unknown' ? '' : `<span class="badge badge-sm">${cnt[k]}</span>`}</button>`).join('');
   $('hint').textContent = HINT[S.tab] + (S.tab === 'rever' && unrev ? ` Faltam confirmar ${unrev}.` : '');
   const busy = !!DL || collecting;
   $('dl').disabled = busy || !nsel; $('dl').textContent = nsel ? `Descarregar ${nf(nsel, 'foto', 'fotos')}` : 'Descarregar';
   if ($('gp')) { $('gp').disabled = busy || !nsel; $('gp').textContent = nsel ? `Enviar ${nsel} para o Google Fotos` : 'Enviar para o Google Fotos' }
-  $('barn').textContent = nsel ? `${nf(nsel, 'foto marcada', 'fotos marcadas')} para descarregar` : 'Nenhuma foto marcada';
+  $('barn').innerHTML = nsel ? `${nsel} <span class="max-sm:hidden">${nsel === 1 ? 'foto marcada' : 'fotos marcadas'} para descarregar</span><span class="sm:hidden">${nsel === 1 ? 'marcada' : 'marcadas'}</span>` : 'Nenhuma foto marcada';   // short on a phone: the bulk buttons need the room
   $('filters').classList.toggle('hidden', S.tab === 'unknown'); $('unrevl').classList.toggle('hidden', S.tab !== 'rever');
+  $('bulk').classList.toggle('hidden', S.tab === 'unknown');   // the unnamed faces are not photos: there is nothing to tick in bulk
   if (S.tab === 'unknown') { CUR = []; return drawUnknown(A) }
   const per = {}; A.forEach(i => i.faces.forEach(f => { if (f.c !== 'sem match' && f.name) per[f.name] = (per[f.name] || 0) + 1 }));
   $('person').innerHTML = '<option value="">todas as pessoas</option>' + Object.keys(per).sort((a, b) => a.localeCompare(b, 'pt')).map(n => `<option value="${esc(n)}" ${S.person === n ? 'selected' : ''}>${esc(n)} (${per[n]})</option>`).join('');
   const L = A.filter(i => i.c === S.tab && (!S.person || i.faces.some(f => f.name === S.person && f.c !== 'sem match')) && !(S.tab === 'rever' && S.onlyUnrev && i.p.rev));
   L.sort((a, b) => b.top - a.top); CUR = L;
   $('count').textContent = nf(L.length, 'foto', 'fotos');
+  // the buttons name what they act on: only the photos shown now (this group, this person), not the whole album
+  const n = L.length, b1 = $('bulk1'), b0 = $('bulk0');
+  b1.innerHTML = n > 1 ? `<span>Marcar as ${n}<span class="max-sm:hidden"> mostradas</span></span>` : n ? 'Marcar esta' : 'Marcar todas'; b0.textContent = n > 1 ? `Desmarcar as ${n}` : 'Desmarcar';
+  b1.disabled = b0.disabled = !n;
   drawGrid(L, A.length);
   if (LB !== null) lb();
 }
@@ -672,11 +677,11 @@ function svg(i) {
   }).join('');
   return `<svg viewBox="0 0 ${p.w} ${p.h}" class="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true">${boxes}${labels}</svg>`;
 }
-const badges = (i, big) => i.faces.filter(f => f.c !== 'sem match').map(f => `<span class="badge ${big ? 'badge-lg' : ''}" style="border-color:${COL[f.c]}" title="${Math.round(f.score * 100)}% de semelhança">${esc(faceLabel(f))}</span>`).join('') || '<span class="text-xs opacity-60">ninguém conhecido</span>';
+const badges = (i, big) => i.faces.filter(f => f.c !== 'sem match').map(f => `<span class="badge ${big ? 'badge-lg' : ''}" style="border-color:${COL[f.c]}" title="${Math.round(f.score * 100)}% de semelhança">${esc(faceLabel(f))}</span>`).join('') || '<span class="text-xs opacity-75">ninguém conhecido</span>';
 function drawGrid(L, total) {
   const g = $('grid');
   delete g.dataset.unk;
-  if (!L.length) { g.innerHTML = `<div class="opacity-60 col-span-full text-center py-16">${total ? 'nenhuma foto neste grupo' : 'a aguardar fotos…'}</div>`; return }
+  if (!L.length) { g.innerHTML = `<div class="opacity-75 col-span-full text-center py-16">${total ? 'nenhuma foto neste grupo' : 'a aguardar fotos…'}</div>`; return }
   if (g.firstElementChild && !g.firstElementChild.dataset.id) g.innerHTML = '';
   let prev = null;
   for (const i of L) {
@@ -691,7 +696,7 @@ function drawGrid(L, total) {
       c.sig = sig;
       c.el.className = `card bg-base-100 shadow-md overflow-hidden ${on_ ? 'ring-2 ring-success' : ''} ${FOC === i.id ? 'outline outline-2 outline-offset-2 outline-primary' : ''}`;
       const img = c.el.querySelector('img'); if (i.p.w && !img.getAttribute('width')) { img.setAttribute('width', i.p.w); img.setAttribute('height', i.p.h) }
-      c.el.querySelector('.ov').innerHTML = svg(i) + `<input type="checkbox" class="checkbox checkbox-success checkbox-md absolute top-2 left-2 bg-black/50" ${on_ ? 'checked' : ''} data-act="toggle" data-id="${i.id}" aria-label="Descarregar a foto ${esc(i.p.key)}" title="Descarregar esta foto">`;
+      c.el.querySelector('.ov').innerHTML = svg(i) + `<label class="absolute top-0 left-0 p-2.5 cursor-pointer" title="Descarregar esta foto"><input type="checkbox" class="checkbox checkbox-success checkbox-md block bg-black/60 border-2 border-white/80" ${on_ ? 'checked' : ''} data-act="toggle" data-id="${i.id}" aria-label="Descarregar a foto ${esc(i.p.key)}"></label>`;
       c.el.querySelector('.card-body').innerHTML = `<div class="flex flex-wrap gap-1">${badges(i)}${i.p.dup ? `<span class="badge badge-ghost" title="Esta foto já foi importada noutro álbum, por isso não vem marcada">repetida (já em ${esc(i.p.dup)})</span>` : ''}${i.p.rev && i.c === 'rever' ? '<span class="badge badge-ghost">confirmada</span>' : ''}</div>`;
     }
     const want = prev ? prev.nextSibling : g.firstChild;
@@ -760,9 +765,9 @@ function drawUnknown(A) {
   if (sig === UNKSIG && g.dataset.unk) return;   // nothing new: keep the crops and whatever is being typed
   UNKSIG = sig; g.dataset.unk = '1'; CARDS.clear(); UNK = clusters(A);
   $('count').textContent = UNK.length ? `Encontrei ${nf(UNK.length, 'pessoa', 'pessoas')} que ainda não conheço` : '';
-  if (!UNK.length) { g.innerHTML = `<div class="opacity-60 col-span-full text-center py-16">${A.some(i => i.c === 'pending') ? 'a aguardar a análise…' : 'Não encontrei pessoas novas neste álbum.'}</div>`; return }
+  if (!UNK.length) { g.innerHTML = `<div class="opacity-75 col-span-full text-center py-16">${A.some(i => i.c === 'pending') ? 'a aguardar a análise…' : 'Não encontrei pessoas novas neste álbum.'}</div>`; return }
   g.innerHTML = UNK.map((c, n) => `<div class="card bg-base-100 shadow p-3 gap-2"><div class="flex flex-wrap gap-1">${c.items.slice(0, 8).map(x => `<canvas width="56" height="56" class="rounded" data-crop="${x.i.id}:${x.f.i}"></canvas>`).join('')}</div>
-   <div class="text-xs opacity-70">${nf(c.items.length, 'cara', 'caras')} em ${nf(new Set(c.items.map(x => x.i.id)).size, 'foto', 'fotos')}</div>
+   <div class="text-xs opacity-80">${nf(c.items.length, 'cara', 'caras')} em ${nf(new Set(c.items.map(x => x.i.id)).size, 'foto', 'fotos')}</div>
    <form class="flex gap-1" data-form="unk" data-n="${n}"><input name="who" data-combo required class="input input-bordered input-sm flex-1 min-w-0" placeholder="Nome" aria-label="Nome desta pessoa"><button class="btn btn-sm btn-primary">Guardar</button></form>
    <button type="button" class="btn btn-xs btn-ghost self-start" data-act="unk-hide" data-n="${n}">Não é um amigo</button></div>`).join('');
   paintCrops(g);
@@ -835,9 +840,9 @@ const wVisible = () => W.clusters.map((c, n) => [c, n]).filter(([c]) => !c.skip 
 const wNames = () => [...new Set(W.clusters.filter(c => c.staged).map(c => c.name))];
 function wCard(n) {
   const c = W.clusters[n], faces = c.items.length, photos = new Set(c.items.map(x => x.pi)).size;
-  if (c.staged) return `<div class="flex items-center gap-2"><span class="text-success" aria-hidden="true">✓</span><b class="flex-1 truncate">${esc(c.name)}</b><span class="text-xs opacity-60">${nf(faces, 'cara', 'caras')}</span><button type="button" class="btn btn-xs btn-ghost" data-act="w-unstage" data-n="${n}">desfazer</button></div>`;
+  if (c.staged) return `<div class="flex items-center gap-2"><span class="text-success" aria-hidden="true">✓</span><b class="flex-1 truncate">${esc(c.name)}</b><span class="text-xs opacity-75">${nf(faces, 'cara', 'caras')}</span><button type="button" class="btn btn-xs btn-ghost" data-act="w-unstage" data-n="${n}">desfazer</button></div>`;
   return `<div class="flex flex-wrap gap-1">${c.items.slice(0, 8).map((x, j) => `<canvas width="56" height="56" class="rounded" data-wcrop="${n}:${j}"></canvas>`).join('')}</div>
-   <div class="text-xs opacity-70">${faces} caras em ${nf(photos, 'foto', 'fotos')}</div>
+   <div class="text-xs opacity-80">${faces} caras em ${nf(photos, 'foto', 'fotos')}</div>
    <form class="flex gap-1" data-form="wname" data-n="${n}"><input name="who" data-combo required class="input input-bordered input-sm flex-1 min-w-0" placeholder="Nome" aria-label="Nome desta pessoa" autocomplete="off"><button class="btn btn-sm btn-primary">Guardar</button></form>
    <button type="button" class="btn btn-xs btn-ghost self-start" data-act="w-ignore" data-n="${n}">Não é um amigo</button>`;
 }
@@ -881,29 +886,29 @@ function stepper() {
   const items = [['people', 'Os teus amigos'], ['ext', 'Ligar ao Facebook'], ['album', 'Primeiro álbum']], st = setupSteps(), at = items.findIndex(x => x[0] === ONB.page);
   return `<ol class="steps w-full mb-8" aria-label="Passos">${items.map(([k, l], i) => `<li class="step ${i <= at || st[i].done ? 'step-primary' : ''}" data-content="${st[i].done ? '✓' : i + 1}" ${i === at ? 'aria-current="step"' : ''}>${l}</li>`).join('')}</ol>`;
 }
-const laterLink = () => `<button type="button" class="link text-sm opacity-70" data-act="onb-later">Fazer isto mais tarde</button>`;
+const laterLink = () => `<button type="button" class="link text-sm opacity-80" data-act="onb-later">Fazer isto mais tarde</button>`;
 function onbWelcome() {
   return `<section class="max-w-4xl mx-auto text-center pt-6"><div class="text-5xl mb-3" aria-hidden="true"><img src="/favicon.svg" alt="" width="72" height="72" class="inline"></div>
    <h1 class="text-3xl font-bold mb-2">Encontra os teus amigos nas fotos do Facebook</h1>
-   <p class="opacity-70 max-w-2xl mx-auto mb-8">O Tagged vê um álbum inteiro, descobre em que fotos estão as pessoas que escolheste e deixa-te descarregar só essas, em boa qualidade e com a data certa.</p>
-   <div class="grid sm:grid-cols-3 gap-4 text-left mb-8">${[['1', '📂', 'Importas um álbum', 'Abres um álbum no Facebook e o Tagged traz as fotos para aqui.'], ['2', '🔍', 'Ele reconhece os teus amigos', 'As fotos ficam separadas: onde estão eles e onde não estão.'], ['3', '⬇️', 'Descarregas as que queres', 'Escolhes as fotos e levas tudo num ficheiro, ou para o Google Fotos.']].map(([n, i, t, d]) => `<div class="card bg-base-100 shadow"><div class="card-body p-5 gap-1"><div class="text-2xl" aria-hidden="true">${i}</div><h2 class="font-semibold">${t}</h2><p class="text-sm opacity-70">${d}</p></div></div>`).join('')}</div>
-   <p class="text-sm opacity-70 mb-4">Antes de começar, há <b>3 passos rápidos</b> (uns 5 minutos, só desta vez).</p>
+   <p class="opacity-80 max-w-2xl mx-auto mb-8">O Tagged vê um álbum inteiro, descobre em que fotos estão as pessoas que escolheste e deixa-te descarregar só essas, em boa qualidade e com a data certa.</p>
+   <div class="grid sm:grid-cols-3 gap-4 text-left mb-8">${[['1', '📂', 'Importas um álbum', 'Abres um álbum no Facebook e o Tagged traz as fotos para aqui.'], ['2', '🔍', 'Ele reconhece os teus amigos', 'As fotos ficam separadas: onde estão eles e onde não estão.'], ['3', '⬇️', 'Descarregas as que queres', 'Escolhes as fotos e levas tudo num ficheiro, ou para o Google Fotos.']].map(([n, i, t, d]) => `<div class="card bg-base-100 shadow"><div class="card-body p-5 gap-1"><div class="text-2xl" aria-hidden="true">${i}</div><h2 class="font-semibold">${t}</h2><p class="text-sm opacity-80">${d}</p></div></div>`).join('')}</div>
+   <p class="text-sm opacity-80 mb-4">Antes de começar, há <b>3 passos rápidos</b> (uns 5 minutos, só desta vez).</p>
    <div class="flex flex-wrap justify-center gap-3 items-center"><button type="button" class="btn btn-primary btn-lg" data-act="onb" data-v="people">Começar</button>${laterLink().replace('Fazer isto mais tarde', 'Já tenho tudo configurado')}</div>
-   <p class="text-xs opacity-60 mt-8 max-w-xl mx-auto">As tuas pessoas e os teus álbuns ficam guardados só neste browser. Nada é publicado nem enviado a terceiros.</p></section>`;
+   <p class="text-xs opacity-75 mt-8 max-w-xl mx-auto">As tuas pessoas e os teus álbuns ficam guardados só neste browser. Nada é publicado nem enviado a terceiros.</p></section>`;
 }
 function onbPeople() {
   if (W.step === 'have') return `<div class="card bg-base-100 shadow border border-success/40"><div class="card-body gap-3"><h2 class="card-title">✅ O Tagged já conhece ${nf(PEOPLE.length, 'pessoa', 'pessoas')}</h2>
-    <p class="text-sm opacity-70">${esc(PEOPLE.slice(0, 6).join(', '))}${PEOPLE.length > 6 ? '…' : ''}</p>
+    <p class="text-sm opacity-80">${esc(PEOPLE.slice(0, 6).join(', '))}${PEOPLE.length > 6 ? '…' : ''}</p>
     <div class="card-actions"><button type="button" class="btn btn-primary btn-sm" data-act="onb-next">Continuar</button><button type="button" class="btn btn-sm btn-ghost" data-act="w-step" data-v="choose">Adicionar mais pessoas</button></div></div></div>`;
   if (W.step === 'choose') {
     const err = W.err ? `<p class="text-error text-sm mt-2" role="alert">${esc(W.err)}</p>` : '';
-    return `<h1 class="text-2xl font-bold mb-1">Como queres ensinar o Tagged a reconhecer os teus amigos?</h1><p class="opacity-70 mb-5">Escolhe a forma mais fácil para ti.</p>
+    return `<h1 class="text-2xl font-bold mb-1">Como queres ensinar o Tagged a reconhecer os teus amigos?</h1><p class="opacity-80 mb-5">Escolhe a forma mais fácil para ti.</p>
      <div class="grid md:grid-cols-2 gap-4">
       <article class="card bg-base-100 shadow border border-primary/40"><div class="card-body"><div class="flex items-center gap-2"><h2 class="card-title">Criar a partir de fotos</h2><span class="badge badge-primary badge-sm">recomendado</span></div>
-       <p class="text-sm opacity-70">Escolhe uma pasta com fotos onde os teus amigos apareçam. O Tagged mostra-te as caras e tu dizes quem é quem. Demora uns 5 minutos.</p>
+       <p class="text-sm opacity-80">Escolhe uma pasta com fotos onde os teus amigos apareçam. O Tagged mostra-te as caras e tu dizes quem é quem. Demora uns 5 minutos.</p>
        <div class="card-actions"><button type="button" class="btn btn-primary btn-sm" data-act="w-step" data-v="folder">Escolher fotos</button></div></div></article>
       <article class="card bg-base-100 shadow"><div class="card-body"><h2 class="card-title">Já tenho um ficheiro de pessoas</h2>
-       <p class="text-sm opacity-70">Se já usaste o Tagged noutro sítio e guardaste a cópia (o ficheiro <code>people.npz</code>), carrega-a aqui.</p>
+       <p class="text-sm opacity-80">Se já usaste o Tagged noutro sítio e guardaste a cópia (o ficheiro <code>people.npz</code>), carrega-a aqui.</p>
        <div class="card-actions"><label class="btn btn-sm">Escolher ficheiro<input type="file" class="hidden" multiple accept=".npz,.npy,.zip" data-chg="files"></label>
         <label class="btn btn-sm btn-ghost">ou uma pasta<input type="file" class="hidden" webkitdirectory data-chg="files"></label></div>${err}</div></article></div>
      <p class="mt-6 text-center">${laterLink()}</p>`;
@@ -911,7 +916,7 @@ function onbPeople() {
   if (W.step === 'folder' || W.step === 'ready') {
     const ready = W.step === 'ready', err = W.err ? `<p class="text-error text-sm mt-2" role="alert">${esc(W.err)}</p>` : '';
     return `<h1 class="text-2xl font-bold mb-3">Escolhe as fotos dos teus amigos</h1>
-     <ul class="space-y-2 text-sm opacity-80 mb-5"><li>📁 Uma pasta com fotos onde os teus amigos apareçam. Chegam 50 a 300 fotos (aceito até ${MAX_SETUP_PHOTOS}).</li>
+     <ul class="space-y-2 text-sm opacity-90 mb-5"><li>📁 Uma pasta com fotos onde os teus amigos apareçam. Chegam 50 a 300 fotos (aceito até ${MAX_SETUP_PHOTOS}).</li>
       <li>👥 Cada pessoa deve aparecer em pelo menos <b>3 fotos</b>. Quanto mais variadas (luz, épocas), melhor.</li>
       <li>🔒 As fotos não ficam guardadas: só são usadas agora para encontrar as caras.</li></ul>
      <div class="flex flex-wrap gap-2 items-center"><label class="btn ${ready ? '' : 'btn-primary'} btn-sm">${ready ? 'Escolher outra pasta' : 'Escolher pasta'}<input type="file" class="hidden" webkitdirectory data-chg="wfiles"></label>
@@ -921,24 +926,24 @@ function onbPeople() {
       <div class="card-actions"><button type="button" class="btn btn-primary btn-sm" data-act="w-run">Procurar caras nestas fotos</button></div></div></div>` : ''}`;
   }
   if (W.step === 'process') return `<div class="card bg-base-100 shadow border border-primary/30"><div class="card-body gap-3">
-     <div class="flex items-center gap-3"><div class="text-3xl animate-pulse" aria-hidden="true">🔍</div><div class="flex-1"><div class="font-semibold">A procurar caras nas fotos…</div><div id="wtxt" class="text-sm opacity-70" role="status" aria-live="polite"></div></div></div>
+     <div class="flex items-center gap-3"><div class="text-3xl animate-pulse" aria-hidden="true">🔍</div><div class="flex-1"><div class="font-semibold">A procurar caras nas fotos…</div><div id="wtxt" class="text-sm opacity-80" role="status" aria-live="polite"></div></div></div>
      <progress id="wprog" class="progress progress-primary w-full h-3" value="0" max="1"></progress>
      <div class="card-actions"><button type="button" class="btn btn-sm btn-ghost" data-act="w-cancel">Cancelar</button></div></div></div>`;
   if (W.step === 'name') {
     const vis = wVisible(), small = W.clusters.filter(c => !c.skip && !c.staged && c.items.length < W.minSize).length;
     return `<div class="sticky top-14 z-10 bg-base-200/95 backdrop-blur py-2 mb-3 flex flex-wrap items-center gap-3">
-      <div class="flex-1 min-w-[14rem]"><h1 class="text-xl font-bold">Quem é cada pessoa?</h1><div class="text-sm opacity-70">Juntei as caras parecidas em grupos. Escreve o nome de cada pessoa (Enter para passar ao grupo seguinte). Se uma pessoa estiver em mais do que um grupo, usa o mesmo nome.</div></div>
+      <div class="flex-1 min-w-[14rem]"><h1 class="text-xl font-bold">Quem é cada pessoa?</h1><div class="text-sm opacity-80">Juntei as caras parecidas em grupos. Escreve o nome de cada pessoa (Enter para passar ao grupo seguinte). Se uma pessoa estiver em mais do que um grupo, usa o mesmo nome.</div></div>
       <span id="wsum" class="text-sm" role="status" aria-live="polite"></span>
       <button type="button" class="btn btn-primary btn-sm" id="wcommit" data-act="w-commit" disabled>Guardar pessoas</button>
       <button type="button" class="btn btn-ghost btn-sm" data-act="w-cancel">Cancelar</button></div>
-     <div id="wgrid" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">${vis.slice(0, W.shown).map(([c, n]) => `<div class="card bg-base-100 shadow p-3 gap-2" id="wc-${n}">${wCard(n)}</div>`).join('') || '<div class="opacity-70 col-span-full py-10 text-center">Não encontrei caras que se repitam. Experimenta fotos em que cada pessoa apareça mais vezes.</div>'}</div>
+     <div id="wgrid" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">${vis.slice(0, W.shown).map(([c, n]) => `<div class="card bg-base-100 shadow p-3 gap-2" id="wc-${n}">${wCard(n)}</div>`).join('') || '<div class="opacity-80 col-span-full py-10 text-center">Não encontrei caras que se repitam. Experimenta fotos em que cada pessoa apareça mais vezes.</div>'}</div>
      <div class="mt-4 flex flex-wrap gap-2 justify-center">${vis.length > W.shown ? `<button type="button" class="btn btn-sm" data-act="w-more">Mostrar mais grupos (${vis.length - W.shown})</button>` : ''}
       ${small ? `<button type="button" class="btn btn-sm btn-ghost" data-act="w-small">${W.minSize > 2 ? `Mostrar também quem só apareceu 2 vezes (${small})` : 'Esconder quem só apareceu 2 vezes'}</button>` : ''}</div>`;
   }
   return `<div class="card bg-base-100 shadow border border-success/40"><div class="card-body gap-3">   <!-- done -->
      <div class="flex items-center gap-3"><div class="text-4xl" aria-hidden="true">✅</div><div><h1 class="text-xl font-bold">${nf(W.count, 'pessoa guardada', 'pessoas guardadas')}</h1>
-      <p class="text-sm opacity-70">O Tagged já sabe reconhecê-${W.count === 1 ? 'la' : 'las'} nas fotos dos álbuns.</p></div></div>
-     ${W.how === 'folder' ? `<p class="text-sm opacity-80"><b>Dica:</b> guarda uma cópia das tuas pessoas. Se mudares de computador ou de browser, carregas esse ficheiro em vez de repetir isto.</p>` : ''}
+      <p class="text-sm opacity-80">O Tagged já sabe reconhecê-${W.count === 1 ? 'la' : 'las'} nas fotos dos álbuns.</p></div></div>
+     ${W.how === 'folder' ? `<p class="text-sm opacity-90"><b>Dica:</b> guarda uma cópia das tuas pessoas. Se mudares de computador ou de browser, carregas esse ficheiro em vez de repetir isto.</p>` : ''}
      <div class="card-actions"><button type="button" class="btn btn-primary btn-sm" data-act="onb-next">Continuar</button>
       ${W.how === 'folder' ? '<button type="button" class="btn btn-sm" data-act="people-export">Guardar uma cópia</button>' : ''}
       <button type="button" class="btn btn-sm btn-ghost" data-act="w-restart">Adicionar mais pessoas</button></div></div></div>`;
@@ -950,7 +955,7 @@ function extStatus() {
     : `<div class="alert text-sm" role="status"><span class="loading loading-spinner loading-sm"></span><span>À espera que instales… Quando estiver feito, isto muda sozinho.</span></div>`;
 }
 function extSteps() {
-  const step = (n, t, d) => `<li class="flex gap-3"><span class="w-7 h-7 shrink-0 rounded-full bg-base-300 flex items-center justify-center text-sm font-bold" aria-hidden="true">${n}</span><div class="flex-1 min-w-0"><div class="font-medium">${t}</div>${d ? `<div class="text-sm opacity-70 mt-1">${d}</div>` : ''}</div></li>`;
+  const step = (n, t, d) => `<li class="flex gap-3"><span class="w-7 h-7 shrink-0 rounded-full bg-base-300 flex items-center justify-center text-sm font-bold" aria-hidden="true">${n}</span><div class="flex-1 min-w-0"><div class="font-medium">${t}</div>${d ? `<div class="text-sm opacity-80 mt-1">${d}</div>` : ''}</div></li>`;
   return `<ol class="space-y-4">
     ${step(1, 'Descarrega a extensão', `<a class="btn btn-primary btn-sm mt-1" href="/extension.zip" download>Descarregar extensão</a><div class="mt-2">Depois descomprime o ficheiro: fica uma pasta chamada <code>tagged-extension</code>.</div>`)}
     ${step(2, 'Abre a página de extensões do Chrome', `Copia este endereço, cola-o na barra de endereços do Chrome e carrega em Enter.<div class="mt-1 flex items-center gap-2"><code class="bg-base-300 px-2 py-1 rounded">chrome://extensions</code><button type="button" class="btn btn-xs" data-act="copy" data-t="chrome://extensions">Copiar</button></div>`)}
@@ -961,7 +966,7 @@ function extSteps() {
 function onbExt() {
   const ok = EXT.ok && vcmp(EXT.v, EXT_MIN) >= 0;
   return `<h1 class="text-2xl font-bold mb-1">Liga o Tagged ao Facebook</h1>
-   <p class="opacity-70 mb-4">O Tagged precisa de uma pequena <b>extensão do Chrome</b> para ir buscar as fotos ao álbum que abrires. Só se instala uma vez e só mexe no álbum que abrires, não em mais nada.</p>
+   <p class="opacity-80 mb-4">O Tagged precisa de uma pequena <b>extensão do Chrome</b> para ir buscar as fotos ao álbum que abrires. Só se instala uma vez e só mexe no álbum que abrires, não em mais nada.</p>
    ${browserOk() ? '' : `<div class="alert alert-warning text-sm mb-4"><span>Esta parte só funciona no <b>Chrome</b> (ou Edge/Brave) <b>num computador</b>. Abre o Tagged lá para ligar ao Facebook.</span></div>`}
    <div class="mb-4">${extStatus()}</div>
    ${ok ? '' : `<div class="mb-5">${extSteps()}</div>`}
@@ -969,13 +974,13 @@ function onbExt() {
 }
 function onbAlbum() {
   const ready = EXT.ok && vcmp(EXT.v, EXT_MIN) >= 0 && EXT.fb;
-  const row = (done, t, d) => `<li class="flex gap-3 items-start"><span class="w-6 h-6 shrink-0 rounded-full flex items-center justify-center text-xs font-bold ${done ? 'bg-success text-success-content' : 'bg-base-300'}" aria-hidden="true">${done ? '✓' : '•'}</span><div><div class="font-medium">${t}</div>${done ? '' : `<div class="text-sm opacity-70">${d}</div>`}</div></li>`;
+  const row = (done, t, d) => `<li class="flex gap-3 items-start"><span class="w-6 h-6 shrink-0 rounded-full flex items-center justify-center text-xs font-bold ${done ? 'bg-success text-success-content' : 'bg-base-300'}" aria-hidden="true">${done ? '✓' : '•'}</span><div><div class="font-medium">${t}</div>${done ? '' : `<div class="text-sm opacity-80">${d}</div>`}</div></li>`;
   return `<h1 class="text-2xl font-bold mb-1">Importa o teu primeiro álbum</h1>
-   <p class="opacity-70 mb-4">Abre um álbum no Facebook, volta aqui e carrega no botão. O Tagged percorre o álbum sozinho.</p>
+   <p class="opacity-80 mb-4">Abre um álbum no Facebook, volta aqui e carrega no botão. O Tagged percorre o álbum sozinho.</p>
    <ul class="space-y-3 mb-5">${row(EXT.ok && vcmp(EXT.v, EXT_MIN) >= 0, 'Ligado ao Facebook', 'Falta o passo anterior.')}
     ${row(EXT.fb, 'Há um álbum aberto no Facebook', 'Noutro separador do Chrome, abre um álbum de fotos (a página com a grelha). Pode ser o de um evento a que foste.')}</ul>
    <div class="flex flex-wrap items-center gap-3"><button type="button" class="btn btn-primary" data-act="collect" ${ready ? '' : 'disabled'}>＋ Importar álbum do Facebook</button>${laterLink()}</div>
-   ${ready ? '' : '<p class="text-sm opacity-60 mt-3">O botão acende quando as duas coisas acima estiverem feitas.</p>'}`;
+   ${ready ? '' : '<p class="text-sm opacity-75 mt-3">O botão acende quando as duas coisas acima estiverem feitas.</p>'}`;
 }
 function renderSetup() {
   const v = $('view');
@@ -998,20 +1003,26 @@ function lb() {
   const d = $('lb'); if (LB === null) { if (d.open) d.close(); return }
   const k = CUR.findIndex(x => x.id === LB), i = CUR[k] || info(rawOf(LB)), on_ = sel(i);
   const face = FACE != null && i.faces[FACE];
-  const sig = [LB, FACE, on_, k, CUR.length, PVER, IVER, i.faces.map(f => f.name + f.score).join()].join('|');
+  const sig = [LB, FACE, on_, !!i.p.rev, k, CUR.length, PVER, IVER, i.faces.map(f => f.name + f.score).join()].join('|');
   if (d.open && sig === LBSIG) return;   // a score arriving elsewhere must not wipe what is being typed here
   LBSIG = sig;
-  $('lbbody').innerHTML = `<div class="flex flex-col items-center gap-3 max-h-full max-w-full">
+  const edge = (d, on, label, side) => on ? `<button type="button" class="btn btn-circle bg-black/60 border-white/20 text-white hover:bg-black/80 absolute ${side} top-1/2 -translate-y-1/2" data-act="nav" data-d="${d}" aria-label="${label}">${d < 0 ? '←' : '→'}</button>` : '';
+  // a photo waiting to be confirmed gets the two explicit decisions (P / X); the others keep the plain on/off toggle
+  const decision = i.c === 'rever'
+    ? `<button type="button" class="btn ${on_ && i.p.rev ? 'btn-success' : 'btn-outline btn-success'}" data-act="decide" data-id="${i.id}" data-v="1" aria-pressed="${on_ && !!i.p.rev}">✓ Incluir <kbd class="kbd kbd-sm text-base-content">P</kbd></button>
+       <button type="button" class="btn ${!on_ && i.p.rev ? 'btn-error' : 'btn-outline'}" data-act="decide" data-id="${i.id}" data-v="0" aria-pressed="${!on_ && !!i.p.rev}">✕ Deixar de fora <kbd class="kbd kbd-sm text-base-content">X</kbd></button>`
+    : `<button type="button" class="btn ${on_ ? 'btn-success' : 'btn-outline'}" data-act="toggle" data-id="${i.id}">${on_ ? '✓ Vai ser descarregada' : 'Descarregar esta foto'} <kbd class="kbd kbd-sm text-base-content">espaço</kbd></button>`;
+  const arrows = edge(-1, k > 0, 'Anterior', 'left-2') + edge(1, k >= 0 && k < CUR.length - 1, 'Seguinte', 'right-2');
+  $('lbbody').innerHTML = `<button type="button" class="btn btn-circle btn-sm bg-black/60 border-white/20 text-white hover:bg-black/80 absolute top-3 right-3 z-10" data-act="lbclose" aria-label="Fechar">✕</button>
+   <div class="flex flex-col items-center gap-3 max-h-full max-w-full">
    ${i.p.w && i.p.h
      // Fill the viewport (thumbnails are small, max-* alone never upscales): the box keeps the photo's aspect ratio, as wide as
      // the screen allows and as tall as what is left under the controls, so the face boxes of the svg overlay stay aligned.
-     ? `<div class="relative" style="aspect-ratio:${i.p.w}/${i.p.h};width:min(96vw,calc((100dvh - ${face ? 14 : 11}rem) * ${i.p.w / i.p.h}))"><img src="${i.p.url}" alt="" class="block w-full h-full rounded-lg">${svg(i)}</div>`
-     : `<div class="relative inline-block"><img src="${i.p.url}" alt="" class="block max-h-[66dvh] max-w-[92vw] rounded-lg">${svg(i)}</div>`}
-   <div class="flex flex-wrap items-center justify-center gap-2"><button type="button" class="btn btn-sm" data-act="nav" data-d="-1" ${k <= 0 ? 'disabled' : ''} aria-label="Anterior">←</button>${badges(i, 1)}
-    <span class="text-sm opacity-70">${k + 1}/${CUR.length}</span>
-    <button type="button" class="btn btn-sm ${on_ ? 'btn-success' : 'btn-outline'}" data-act="toggle" data-id="${i.id}">${on_ ? '✓ Vai ser descarregada' : 'Descarregar esta foto'} <span class="opacity-60">(espaço)</span></button>
-    <button type="button" class="btn btn-sm" data-act="nav" data-d="1" ${k < 0 || k >= CUR.length - 1 ? 'disabled' : ''} aria-label="Seguinte">→</button><button type="button" class="btn btn-sm btn-ghost" data-act="lbclose">Fechar</button></div>
-   ${i.faces.length ? `<div class="flex flex-wrap items-center justify-center gap-2"><span class="text-xs opacity-70">Quem aparece:</span>${i.faces.map(f => `<button type="button" class="rounded-lg border-2 ${FACE === f.i ? 'border-primary' : 'border-transparent'}" data-act="face" data-i="${f.i}" title="${f.name ? esc(faceLabel(f)) : 'sem nome'} · clica para dizer quem é"><canvas width="48" height="48" class="rounded-md block" data-crop="${i.id}:${f.i}"></canvas></button>`).join('')}</div>` : ''}
+     ? `<div class="relative" style="aspect-ratio:${i.p.w}/${i.p.h};width:min(96vw,calc((100dvh - ${face ? 18 : 15}rem) * ${i.p.w / i.p.h}))"><img src="${i.p.url}" alt="" class="block w-full h-full rounded-lg">${svg(i)}${arrows}</div>`
+     : `<div class="relative inline-block"><img src="${i.p.url}" alt="" class="block max-h-[66dvh] max-w-[92vw] rounded-lg">${svg(i)}${arrows}</div>`}
+   <div class="flex flex-wrap items-center justify-center gap-2">${badges(i, 1)}${k >= 0 ? `<span class="text-sm opacity-90">${k + 1} de ${CUR.length}</span>` : ''}</div>
+   <div class="flex flex-wrap items-center justify-center gap-2">${decision}</div>
+   ${i.faces.length ? `<div class="flex flex-wrap items-center justify-center gap-2"><span class="text-xs opacity-80">Quem aparece:</span>${i.faces.map(f => `<button type="button" class="rounded-lg border-2 ${FACE === f.i ? 'border-primary' : 'border-transparent'}" data-act="face" data-i="${f.i}" title="${f.name ? esc(faceLabel(f)) : 'sem nome'} · clica para dizer quem é"><canvas width="48" height="48" class="rounded-md block" data-crop="${i.id}:${f.i}"></canvas></button>`).join('')}</div>` : ''}
    ${face ? `<form class="flex flex-wrap items-center justify-center gap-2" data-form="face"><span class="text-sm">Quem é?</span>
      <input name="who" data-combo required class="input input-bordered input-sm w-56" value="${esc(face.name || '')}" aria-label="Nome da pessoa nesta cara">
      <button class="btn btn-sm btn-primary">Guardar nome</button>
@@ -1055,9 +1066,9 @@ function cbRender() {
   const hl = n => { const nn = n.normalize('NFC'), f = fold(nn), k = q ? f.indexOf(q) : -1;
     return k >= 0 && f.length === nn.length ? `${esc(nn.slice(0, k))}<b class="text-primary">${esc(nn.slice(k, k + q.length))}</b>${esc(nn.slice(k + q.length))}` : esc(nn) };
   const exact = CB.items.some(n => fold(n) === q);
-  CB.el.innerHTML = CB.items.map((n, i) => `<div role="option" id="cb-${i}" data-i="${i}" aria-selected="${i === CB.active}" class="px-3 py-2 text-sm cursor-pointer flex items-baseline gap-2 ${i === CB.active ? 'bg-primary text-primary-content' : 'hover:bg-base-200'}"><span class="truncate">${hl(n)}</span>${PE[n] ? `<span class="ml-auto text-xs opacity-60 shrink-0">${nf(PE[n].k, 'foto de exemplo', 'fotos de exemplo')}</span>` : ''}</div>`).join('')
-    + (!CB.items.length && (only || !raw) ? `<div class="px-3 py-3 text-sm opacity-70">${only ? 'Ninguém com esse nome.' : raw ? '' : 'Ainda não há pessoas.'}</div>` : '')
-    + (!only && raw && !exact ? `<div class="px-3 py-2 text-xs opacity-70 border-t border-base-300 sticky bottom-0 bg-base-100">Pessoa nova: <b>${esc(raw)}</b>. Carrega em Enter para guardar.</div>` : '');
+  CB.el.innerHTML = CB.items.map((n, i) => `<div role="option" id="cb-${i}" data-i="${i}" aria-selected="${i === CB.active}" class="px-3 py-2 text-sm cursor-pointer flex items-baseline gap-2 ${i === CB.active ? 'bg-primary text-primary-content' : 'hover:bg-base-200'}"><span class="truncate">${hl(n)}</span>${PE[n] ? `<span class="ml-auto text-xs opacity-75 shrink-0">${nf(PE[n].k, 'foto de exemplo', 'fotos de exemplo')}</span>` : ''}</div>`).join('')
+    + (!CB.items.length && (only || !raw) ? `<div class="px-3 py-3 text-sm opacity-80">${only ? 'Ninguém com esse nome.' : raw ? '' : 'Ainda não há pessoas.'}</div>` : '')
+    + (!only && raw && !exact ? `<div class="px-3 py-2 text-xs opacity-80 border-t border-base-300 sticky bottom-0 bg-base-100">Pessoa nova: <b>${esc(raw)}</b>. Carrega em Enter para guardar.</div>` : '');
   if (CB.active >= 0) inp.setAttribute('aria-activedescendant', 'cb-' + CB.active); else inp.removeAttribute('aria-activedescendant');
   cbPlace();
 }
@@ -1247,10 +1258,10 @@ async function uploadGoogle(D, files) {
 /* ---------- Ajuda: connection to Facebook, what the colours mean, answers, shortcuts ---------- */
 function viewExtension() {
   const dot = c => `<span class="inline-block w-3 h-3 rounded-full align-middle mr-1" style="background:${c}" aria-hidden="true"></span>`;
-  const faq = (q, a) => `<div class="collapse collapse-arrow bg-base-100 shadow mb-2"><input type="checkbox" aria-label="${esc(q)}"><div class="collapse-title font-medium">${q}</div><div class="collapse-content text-sm opacity-80 space-y-2">${a}</div></div>`;
-  $('view').innerHTML = `<h1 class="text-2xl font-bold mb-1">Ajuda</h1><p class="text-sm opacity-70 mb-6">Tudo o que precisas para usar o Tagged, em poucas palavras.</p>
+  const faq = (q, a) => `<div class="collapse collapse-arrow bg-base-100 shadow mb-2"><input type="checkbox" aria-label="${esc(q)}"><div class="collapse-title font-medium">${q}</div><div class="collapse-content text-sm opacity-90 space-y-2">${a}</div></div>`;
+  $('view').innerHTML = `<h1 class="text-2xl font-bold mb-1">Ajuda</h1><p class="text-sm opacity-80 mb-6">Tudo o que precisas para usar o Tagged, em poucas palavras.</p>
   <section class="card bg-base-100 shadow mb-6" id="ligar"><div class="card-body gap-4"><h2 class="card-title">Ligação ao Facebook</h2>
-   <p class="text-sm opacity-70">É uma pequena extensão do Chrome que o Tagged usa para ir buscar as fotos do álbum que tens aberto. Só se instala uma vez.${EXT.ok ? ` Versão instalada: ${esc(EXT.v)}${CFG.extension ? ` (a mais recente é a ${esc(CFG.extension)})` : ''}.` : ''}</p>
+   <p class="text-sm opacity-80">É uma pequena extensão do Chrome que o Tagged usa para ir buscar as fotos do álbum que tens aberto. Só se instala uma vez.${EXT.ok ? ` Versão instalada: ${esc(EXT.v)}${CFG.extension ? ` (a mais recente é a ${esc(CFG.extension)})` : ''}.` : ''}</p>
    ${browserOk() ? '' : '<div class="alert alert-warning text-sm"><span>Só funciona no <b>Chrome</b> (ou Edge/Brave) num computador.</span></div>'}
    ${extStatus()}
    <details ${EXT.ok && vcmp(EXT.v, EXT_MIN) >= 0 ? '' : 'open'}><summary class="cursor-pointer text-sm font-medium mb-3">${EXT.ok ? 'Como instalar ou atualizar' : 'Como instalar'}</summary>${extSteps()}</details></div></section>
@@ -1266,26 +1277,26 @@ function viewExtension() {
    ${faq('Reconheceu a pessoa errada. E agora?', '<p>Abre a foto, clica na cara e diz quem é: o Tagged aprende com isso. Se achas que anda a marcar demais ou de menos, usa “Ajustar o reconhecimento” dentro do álbum.</p>')}
    ${faq('Posso usar noutro computador?', '<p>Sim. Em <b>Pessoas</b> carrega em “Guardar cópia” e depois, no outro computador, “Carregar ficheiro”. Os álbuns importados não vão na cópia: importa-os outra vez.</p>')}
    ${faq('Como mudo quem é reconhecido?', '<p>Em <b>Pessoas</b> podes ligar ou desligar cada pessoa, adicionar mais ou remover. Os álbuns já importados atualizam-se sozinhos.</p>')}</section>
-  <section class="card bg-base-100 shadow"><div class="card-body gap-2"><h2 class="card-title">Atalhos de teclado</h2><p class="text-sm opacity-70">Dentro de um álbum, para despachar fotos depressa.</p>${HELP}</div></section>`;
+  <section class="card bg-base-100 shadow"><div class="card-body gap-2"><h2 class="card-title">Atalhos de teclado</h2><p class="text-sm opacity-80">Dentro de um álbum, para despachar fotos depressa.</p>${HELP}</div></section>`;
 }
 
 /* ---------- settings: people, storage ---------- */
 function viewSettings() {
   $('view').innerHTML = `<div class="flex flex-wrap items-end gap-3 mb-6" id="drop"><div class="flex-1 min-w-[16rem]"><h1 class="text-2xl font-bold">Pessoas</h1>
-   <p class="text-sm opacity-70">Os amigos que o Tagged sabe reconhecer. Ficam guardados só neste browser.</p></div>
+   <p class="text-sm opacity-80">Os amigos que o Tagged sabe reconhecer. Ficam guardados só neste browser.</p></div>
    <button type="button" class="btn btn-primary btn-sm" data-act="onb" data-v="people">＋ Adicionar pessoas</button>
    <label class="btn btn-sm" title="Carrega um ficheiro de pessoas (people.npz) que tenhas guardado. Também podes largá-lo aqui.">Carregar ficheiro<input type="file" class="hidden" multiple accept=".npz,.npy,.zip" data-chg="files"></label>
    <button type="button" class="btn btn-sm" data-act="people-export" ${PEOPLE.length ? '' : 'disabled'} title="Guarda as tuas pessoas num ficheiro, para usares noutro computador ou como cópia de segurança">Guardar cópia</button></div>
   <p id="pmsg" class="text-sm mb-3"></p>
   ${PEOPLE.length ? `<section class="card bg-base-100 shadow mb-6"><div class="card-body gap-3">
-   <p class="text-sm opacity-70">Só as pessoas com o interruptor ligado são reconhecidas nas fotos. Podes desligar quem não te interessa sem a apagar. Os álbuns atualizam-se sozinhos.</p>
+   <p class="text-sm opacity-80">Só as pessoas com o interruptor ligado são reconhecidas nas fotos. Podes desligar quem não te interessa sem a apagar. Os álbuns atualizam-se sozinhos.</p>
    <div class="flex flex-wrap gap-2 items-center"><input id="psearch" class="input input-bordered input-sm" placeholder="Procurar uma pessoa…" aria-label="Procurar pessoas" data-inp="psearch" value="${esc(S.search)}">
-    <button type="button" class="btn btn-sm" data-act="all" data-v="1">Ligar todas</button><button type="button" class="btn btn-sm btn-ghost" data-act="all" data-v="0">Desligar todas</button><span id="pcount" class="text-sm opacity-70"></span></div>
+    <button type="button" class="btn btn-sm" data-act="all" data-v="1">Ligar todas</button><button type="button" class="btn btn-sm btn-ghost" data-act="all" data-v="0">Desligar todas</button><span id="pcount" class="text-sm opacity-80"></span></div>
    <div id="plist" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-1"></div></div></section>`
    : `<section class="card bg-base-100 shadow mb-6 border border-warning/50"><div class="card-body items-center text-center gap-2 py-10"><div class="text-4xl" aria-hidden="true">👥</div><h2 class="text-lg font-semibold">Ainda não há pessoas</h2>
-    <p class="text-sm opacity-70 max-w-md">Escolhe uma pasta com fotos dos teus amigos e diz quem é quem, ou carrega um ficheiro que já tenhas.</p><button type="button" class="btn btn-primary btn-sm" data-act="onb" data-v="people">Adicionar pessoas</button></div></section>`}
+    <p class="text-sm opacity-80 max-w-md">Escolhe uma pasta com fotos dos teus amigos e diz quem é quem, ou carrega um ficheiro que já tenhas.</p><button type="button" class="btn btn-primary btn-sm" data-act="onb" data-v="people">Adicionar pessoas</button></div></section>`}
   <details class="card bg-base-100 shadow"><summary class="card-body p-4 cursor-pointer font-medium">Avançado</summary><div class="px-4 pb-4 space-y-3">
-   <p id="storage" class="text-sm opacity-70">…</p>
+   <p id="storage" class="text-sm opacity-80">…</p>
    <button type="button" class="btn btn-sm btn-ghost text-error" data-act="people-clear" ${PEOPLE.length ? '' : 'disabled'}>Apagar todas as pessoas</button></div></details>`;
   const dz = $('drop'); dz.ondragover = e => e.preventDefault(); dz.ondrop = e => { e.preventDefault(); loadPeopleFiles(e.dataTransfer.files) };
   if (PEOPLE.length) renderPeople(); renderStorage();
@@ -1302,7 +1313,7 @@ function renderPeople() {
   const q = S.search.toLowerCase(), c = $('pcount'), l = $('plist'); if (!c || !l) return;
   c.textContent = `${PEOPLE.filter(on).length} de ${PEOPLE.length} a ser reconhecidas`;
   const list = PEOPLE.filter(n => n.toLowerCase().includes(q));
-  l.innerHTML = list.length ? list.map(n => `<div class="flex items-center gap-1 rounded-lg hover:bg-base-200 px-2 py-1"><label class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"><input type="checkbox" class="toggle toggle-success toggle-sm" ${on(n) ? 'checked' : ''} data-chg="person-on" data-n="${esc(n)}" aria-label="Reconhecer ${esc(n)}"><span class="truncate"><b class="font-medium">${esc(n)}</b> <span class="opacity-60 text-xs">${nf(PE[n].k, 'foto de exemplo', 'fotos de exemplo')}${PE[n].added ? ` (+${PE[n].added} novas)` : ''}</span></span></label>${PE[n].added ? `<button type="button" class="btn btn-ghost btn-xs" title="desfazer as ${PE[n].added} caras que acrescentaste" aria-label="Desfazer as caras acrescentadas a ${esc(n)}" data-act="people-undo" data-n="${esc(n)}">↶</button>` : ''}<button type="button" class="btn btn-ghost btn-xs" title="Apagar ${esc(n)}" aria-label="Apagar ${esc(n)}" data-act="people-del" data-n="${esc(n)}">✕</button></div>`).join('') : '<div class="opacity-70 text-sm col-span-full">Ninguém com esse nome.</div>';
+  l.innerHTML = list.length ? list.map(n => `<div class="flex items-center gap-1 rounded-lg hover:bg-base-200 px-2 py-1"><label class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"><input type="checkbox" class="toggle toggle-success toggle-sm" ${on(n) ? 'checked' : ''} data-chg="person-on" data-n="${esc(n)}" aria-label="Reconhecer ${esc(n)}"><span class="truncate"><b class="font-medium">${esc(n)}</b> <span class="opacity-75 text-xs">${nf(PE[n].k, 'foto de exemplo', 'fotos de exemplo')}${PE[n].added ? ` (+${PE[n].added} novas)` : ''}</span></span></label>${PE[n].added ? `<button type="button" class="btn btn-ghost btn-xs" title="desfazer as ${PE[n].added} caras que acrescentaste" aria-label="Desfazer as caras acrescentadas a ${esc(n)}" data-act="people-undo" data-n="${esc(n)}">↶</button>` : ''}<button type="button" class="btn btn-ghost btn-xs" title="Apagar ${esc(n)}" aria-label="Apagar ${esc(n)}" data-act="people-del" data-n="${esc(n)}">✕</button></div>`).join('') : '<div class="opacity-80 text-sm col-span-full">Ninguém com esse nome.</div>';
 }
 const offChanged = () => { saveCfg(); IVER++; if (cur) touch(cur); renderPeople() };
 function setPerson(n, v) { v ? cfg.off.delete(n) : cfg.off.add(n); offChanged() }
@@ -1316,7 +1327,7 @@ document.addEventListener('click', e => {
   ({
     view: () => setView(t.dataset.v), collect, open: () => openSessionById(id), del: () => delSession(id), dl: () => download(t.dataset.mode), stop: stopAll,
     tab: () => { S.tab = t.dataset.v; FOC = null; draw() }, bulk: () => bulk(t.dataset.v === '1'), toggle: () => toggle(id), big: () => { FOC = id; big(id) },
-    nav: () => nav(+t.dataset.d), lbclose: closeBig, face: () => { FACE = +t.dataset.i; lb() }, 'face-pick': () => nameFace(t.dataset.n),
+    nav: () => nav(+t.dataset.d), decide: () => decide(id, t.dataset.v === '1'), lbclose: closeBig, face: () => { FACE = +t.dataset.i; lb() }, 'face-pick': () => nameFace(t.dataset.n),
     retry: retryErrors, help: () => popup('Atalhos de teclado', HELP), 'note-close': () => note(''), 'th-reset': () => { delete cfg.certain; delete cfg.review; saveCfg(); IVER++; viewSession(); touch(cur) },
     'open-album': () => EXT.ok ? send({ t: 'open', url: cur.albumUrl }) : window.open(cur.albumUrl, '_blank', 'noopener'),
     'unk-hide': () => { S.hiddenClusters.add(UNK[+t.dataset.n].id); draw() },
