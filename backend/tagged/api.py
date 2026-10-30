@@ -31,7 +31,8 @@ WEB = Path(__file__).parent / "web"
 STATIC = {"/": ("index.html", "text/html; charset=utf-8"), "/app.js": ("app.js", "text/javascript; charset=utf-8"),
           "/app.css": ("app.css", "text/css; charset=utf-8"), "/fflate.js": ("fflate.js", "text/javascript; charset=utf-8"),
           "/favicon.svg": ("favicon.svg", "image/svg+xml"), "/favicon.ico": ("favicon.ico", "image/x-icon"),
-          "/apple-touch-icon.png": ("apple-touch-icon.png", "image/png")}
+          "/apple-touch-icon.png": ("apple-touch-icon.png", "image/png"),
+          "/geist.woff2": ("geist.woff2", "font/woff2"), "/geist-mono.woff2": ("geist-mono.woff2", "font/woff2")}
 MAX_BODY = 30 * 1024 * 1024
 LOOPBACK = {"127.0.0.1", "localhost", "::1"}
 GPHOTOS = "https://photoslibrary.googleapis.com/v1/"

@@ -1,18 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- simplified for 16-48 px: bolder strokes, bigger figure, plain badge -->
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#7c83ff"/>
-      <stop offset="1" stop-color="#4338ca"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="116" fill="url(#bg)"/>
-  <g fill="none" stroke="#fff" stroke-width="52" stroke-linecap="round" stroke-linejoin="round">
+  <!-- simplified for 16-48 px: bolder strokes, bigger figure, no fourth bracket gap -->
+  <rect width="512" height="512" rx="112" fill="#ededed"/>
+  <g fill="none" stroke="#141415" stroke-width="52" stroke-linecap="round" stroke-linejoin="round">
     <path d="M96 196V132a36 36 0 0 1 36-36h64"/>
     <path d="M316 96h64a36 36 0 0 1 36 36v64"/>
     <path d="M96 316v64a36 36 0 0 0 36 36h64"/>
+    <path d="M416 316v64a36 36 0 0 1-36 36h-64"/>
   </g>
-  <circle cx="256" cy="206" r="62" fill="#fff"/>
-  <path d="M142 372c0-66 46-104 114-104s114 38 114 104z" fill="#fff"/>
-  <circle cx="394" cy="394" r="78" fill="#22c55e" stroke="#4338ca" stroke-width="18"/>
+  <circle cx="256" cy="212" r="60" fill="#141415"/>
+  <path d="M144 374c0-66 46-104 112-104s112 38 112 104z" fill="#141415"/>
 </svg>

@@ -4,8 +4,8 @@ See SPEC.md for the design. Personal tool: face-based triage of event photos for
 
 ## Layout
 - `backend/` Python (uv). `uv run tagged --help`.
-- `extension/` Chrome MV3 bridge (Facebook tab <-> webapp). Webapp is `backend/tagged/web/` (index.html, app.js, built app.css, vendored fflate.js), served by `tagged serve`.
-- `web/` only builds `app.css` (Tailwind + daisyUI): `npm run build` after changing classes. No CDNs: the page has a strict CSP.
+- `extension/` Chrome MV3 bridge (Facebook tab <-> webapp). Webapp is `backend/tagged/web/` (index.html, app.js, built app.css, vendored fflate.js and the Geist fonts), served by `tagged serve`.
+- `web/` only builds `app.css` (Tailwind + daisyUI, custom `tagged` theme in `tailwind.config.js`) and copies the fonts: `npm run build` after changing classes. No CDNs: the page has a strict CSP.
 - `Dockerfile`, `docker-compose.yml`, `.github/workflows/docker.yml`: image `ghcr.io/mpoboas/tagged`. Only the models live in the /data volume, never in the image; people never reach the server (they stay in the browser).
 
 ## Conventions

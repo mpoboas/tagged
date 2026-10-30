@@ -1,3 +1,44 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@font-face { font-family: "Geist"; src: url("/geist.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "Geist Mono"; src: url("/geist-mono.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+
+@layer base {
+  :root { --ease: cubic-bezier(0.22, 1, 0.36, 1); }
+  html { -webkit-font-smoothing: antialiased; }
+  b, strong { font-weight: 600; }
+  :focus-visible { outline: 2px solid #ededed; outline-offset: 2px; }
+}
+
+@layer components {
+  .btn { font-weight: 500; transition-timing-function: var(--ease); }
+  .btn-primary { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5); }
+  .btn-primary:hover { background-color: #fff; border-color: #fff; }
+  .card-title { font-weight: 500; }
+  .card.bg-base-100, .collapse.bg-base-100 { border: 1px solid rgb(237 237 237 / 0.08); }
+  .card.bg-base-100.border-success\/40 { border-color: rgb(76 195 138 / 0.4); }
+  .card.bg-base-100.border-error\/50 { border-color: rgb(229 72 77 / 0.5); }
+  .alert { background-color: #19191b; color: #ededed; border: 1px solid rgb(237 237 237 / 0.08); }
+  .alert-warning { border-color: rgb(224 164 58 / 0.4); }
+  .alert-error { border-color: rgb(229 72 77 / 0.5); }
+  .alert-success { border-color: rgb(76 195 138 / 0.4); }
+  .tab { font-weight: 500; transition: color 0.15s var(--ease), background-color 0.15s var(--ease); }
+  .kbd { font-family: "Geist Mono", ui-monospace, monospace; font-size: 0.75rem; border-radius: 6px; background: #232325; border: 1px solid rgb(237 237 237 / 0.1); border-bottom-width: 2px; }
+  .badge { font-weight: 400; }
+  .ic { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  /* the signature: the face-detection corners from the logo, drawn on a selected photo or frame */
+  .brk::after {
+    content: ""; position: absolute; inset: 6px; pointer-events: none; z-index: 2; background:
+      linear-gradient(var(--brk, currentColor), var(--brk, currentColor)) 0 0 / 14px 1.5px no-repeat, linear-gradient(var(--brk, currentColor), var(--brk, currentColor)) 0 0 / 1.5px 14px no-repeat,
+      linear-gradient(var(--brk, currentColor), var(--brk, currentColor)) 100% 0 / 14px 1.5px no-repeat, linear-gradient(var(--brk, currentColor), var(--brk, currentColor)) 100% 0 / 1.5px 14px no-repeat,
+      linear-gradient(var(--brk, currentColor), var(--brk, currentColor)) 0 100% / 14px 1.5px no-repeat, linear-gradient(var(--brk, currentColor), var(--brk, currentColor)) 0 100% / 1.5px 14px no-repeat,
+      linear-gradient(var(--brk, currentColor), var(--brk, currentColor)) 100% 100% / 14px 1.5px no-repeat, linear-gradient(var(--brk, currentColor), var(--brk, currentColor)) 100% 100% / 1.5px 14px no-repeat;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .rise { animation: rise 0.3s var(--ease) both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+}

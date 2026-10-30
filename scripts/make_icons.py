@@ -42,7 +42,7 @@ def main():
         tmp = Path(tmp)
         # iOS rounds the corners itself, so its icon is full-bleed and opaque
         square = tmp / "square.svg"
-        square.write_text(big.read_text().replace('rx="116"', 'rx="0"'))
+        square.write_text(big.read_text().replace('rx="112"', 'rx="0"'))
 
         shutil.copyfile(small, WEB / "favicon.svg")                                   # modern browsers: scalable
         ico = render(small, 256, tmp / "s256.png")
